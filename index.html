@@ -1,0 +1,714 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="依 1／4／7／14 間隔複習法的互動式複習計畫工具">
+<style>:root{color-scheme:light dark}html,body{margin:0}body{font:14px system-ui,-apple-system,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>複習節奏</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+  :root{
+    --paper:#F4F6FA; --card:#FFFFFF; --ink:#1B2333; --ink-soft:#4A5468; --ink-faint:#8A93A6;
+    --line:#DFE4EE; --line-soft:#EAEDF4;
+    --accent:#2F52D9; --accent-soft:#E5EAFB; --accent-ink:#1E3AAE;
+    --rail:#0F1830; --rail-ink:#EAECF5;
+    --hl-yellow:#FCE38A; --hl-yellow-b:#E9B308;
+    --hl-pink:#F7C4DE;   --hl-pink-b:#D9418A;
+    --hl-solve:#A8E6D2;  --hl-solve-b:#0F9E7E;
+    --hl-deep:#C6B9F5;   --hl-deep-b:#6B44D4;
+    --good:#0F9E7E; --warn:#D9683A; --warn-soft:#FBE7DD;
+    --shadow:0 1px 2px rgba(20,30,60,.05),0 6px 20px rgba(20,30,60,.06);
+    --shadow-lift:0 2px 6px rgba(20,30,60,.08),0 14px 40px rgba(20,30,60,.10);
+    --r:14px;
+    --serif:"Noto Serif TC",serif; --fra:"Fraunces","Noto Serif TC",serif;
+    --sans:"Noto Sans TC",system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#0E121C; --card:#161C2A; --ink:#EAEDF5; --ink-soft:#AEB6C7; --ink-faint:#727C90;
+      --line:#28303F; --line-soft:#1E2532;
+      --accent:#7D95F2; --accent-soft:#20294A; --accent-ink:#AEBEF9;
+      --rail:#05070D; --rail-ink:#EAECF5;
+      --hl-yellow:#B9930F; --hl-yellow-b:#F0CB3B;
+      --hl-pink:#A83672;   --hl-pink-b:#F390C0;
+      --hl-solve:#12735C;  --hl-solve-b:#63D6B5;
+      --hl-deep:#5136A8;   --hl-deep-b:#B9A6F5;
+      --good:#4FC5A6; --warn:#E8895F; --warn-soft:#2E1D14;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.35);
+      --shadow-lift:0 2px 6px rgba(0,0,0,.4),0 16px 44px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0E121C; --card:#161C2A; --ink:#EAEDF5; --ink-soft:#AEB6C7; --ink-faint:#727C90;
+    --line:#28303F; --line-soft:#1E2532;
+    --accent:#7D95F2; --accent-soft:#20294A; --accent-ink:#AEBEF9;
+    --rail:#05070D; --rail-ink:#EAECF5;
+    --hl-yellow:#B9930F; --hl-yellow-b:#F0CB3B;
+    --hl-pink:#A83672;   --hl-pink-b:#F390C0;
+    --hl-solve:#12735C;  --hl-solve-b:#63D6B5;
+    --hl-deep:#5136A8;   --hl-deep-b:#B9A6F5;
+    --good:#4FC5A6; --warn:#E8895F; --warn-soft:#2E1D14;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.35);
+    --shadow-lift:0 2px 6px rgba(0,0,0,.4),0 16px 44px rgba(0,0,0,.5);
+  }
+
+  *{box-sizing:border-box}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1120px;margin:0 auto;padding:clamp(20px,4vw,44px) clamp(16px,4vw,32px) 90px}
+  a{color:var(--accent-ink)}
+  button{font-family:inherit}
+
+  .eyebrow{font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--accent-ink);font-weight:700;margin:0 0 8px}
+  h1.title{font-family:var(--fra);font-weight:900;font-size:clamp(36px,6.4vw,60px);line-height:.98;letter-spacing:-.01em;margin:0;text-wrap:balance}
+  h1.title .num{color:var(--accent);font-variant-numeric:tabular-nums}
+  .lede{font-size:clamp(15px,1.6vw,17px);color:var(--ink-soft);max-width:62ch;margin:14px 0 0}
+  .lede b{color:var(--ink);font-weight:700}
+
+  details.method{margin-top:20px;border:1px solid var(--line);border-radius:var(--r);background:var(--card);box-shadow:var(--shadow);overflow:hidden}
+  details.method>summary{cursor:pointer;list-style:none;padding:14px 18px;display:flex;align-items:center;gap:10px;font-family:var(--serif);font-weight:700;font-size:15px;color:var(--ink)}
+  details.method>summary::-webkit-details-marker{display:none}
+  details.method>summary .chev{margin-left:auto;color:var(--ink-faint);transition:transform .2s}
+  details.method[open]>summary .chev{transform:rotate(90deg)}
+  .method-body{padding:4px 18px 20px;border-top:1px solid var(--line-soft);color:var(--ink-soft);font-size:14.5px}
+  .method-body p{margin:12px 0}
+  .formula{font-family:var(--fra);font-size:19px;color:var(--ink);background:var(--accent-soft);border-radius:10px;padding:12px 16px;margin:12px 0;font-variant-numeric:tabular-nums;text-align:center}
+  .formula b{color:var(--accent-ink)}
+
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .lg{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 13px 6px 8px;font-size:13px;box-shadow:var(--shadow)}
+  .swatch{width:16px;height:16px;border-radius:5px;flex:none}
+  .lg .stg{font-family:var(--serif);font-weight:700;color:var(--ink)}
+  .lg .pn{color:var(--ink-faint)}
+
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:20px;margin-top:22px}
+  .panel h2{font-family:var(--serif);font-weight:700;font-size:16px;margin:0 0 16px;display:flex;align-items:center;gap:9px;color:var(--ink)}
+  .panel h2 .dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+  .panel h2 small{margin-left:auto;font-family:var(--sans);font-weight:400;font-size:12px;color:var(--ink-faint)}
+  .grid-set{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+  label.fld{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500;color:var(--ink-soft)}
+  input[type=text],input[type=date],input[type=time],input[type=number],select{font-family:inherit;font-size:15px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:9px 11px;width:100%}
+  input::placeholder{color:var(--ink-faint)}
+  input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .hintline{font-size:12px;color:var(--ink-faint);margin-top:6px}
+
+  .subj-wrap{margin-top:18px}
+  .subj-wrap .cap,.tt-cap{font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:9px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .chip{display:inline-flex;align-items:center;gap:7px;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:6px 8px 6px 14px;font-weight:700;font-size:14px;font-family:var(--serif)}
+  .chip button{border:none;background:transparent;color:var(--accent-ink);cursor:pointer;font-size:16px;line-height:1;padding:2px;border-radius:50%;opacity:.6}
+  .chip button:hover{opacity:1}
+  .chip-add{display:inline-flex;gap:6px}
+  .chip-add input{width:120px;padding:7px 11px;font-size:14px}
+  .btn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:9px 15px;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:.15s}
+  .btn:hover{border-color:var(--accent);color:var(--accent-ink);box-shadow:var(--shadow)}
+  .btn.solid{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.solid:hover{filter:brightness(1.06);color:#fff}
+  .btn.mini{padding:7px 12px;font-size:13px}
+  .btn.ghost{border-style:dashed;color:var(--accent-ink)}
+
+  /* weekly time template */
+  .tt{margin-top:18px}
+  .tt-grid{display:flex;flex-direction:column;gap:8px}
+  .ttrow{display:grid;grid-template-columns:74px 1fr auto;gap:12px;align-items:start;padding:10px 12px;border:1px solid var(--line-soft);border-radius:11px;background:var(--paper)}
+  .ttrow.off{opacity:.55}
+  .ttrow .wd{display:flex;align-items:center;gap:8px;font-family:var(--serif);font-weight:700;font-size:14px;color:var(--ink);padding-top:6px}
+  .ttrow .wd input{width:16px;height:16px;accent-color:var(--accent)}
+  .wins{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .win{display:inline-flex;align-items:center;gap:5px;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:4px 6px}
+  .win input[type=time]{width:auto;padding:5px 7px;font-size:13px;font-variant-numeric:tabular-nums}
+  .win .tilde{color:var(--ink-faint);font-size:12px}
+  .win .rm{border:none;background:transparent;color:var(--ink-faint);cursor:pointer;font-size:15px;padding:0 2px}
+  .win .rm:hover{color:var(--warn)}
+  .addwin{border:1px dashed var(--line);background:transparent;color:var(--accent-ink);border-radius:9px;padding:5px 10px;font-size:13px;font-weight:700;cursor:pointer}
+  .ttrow .hrs{font-size:12.5px;color:var(--ink-faint);font-variant-numeric:tabular-nums;padding-top:7px;white-space:nowrap}
+  .ttrow.off .hrs{color:var(--warn)}
+  @media(max-width:560px){.ttrow{grid-template-columns:1fr}.ttrow .hrs{padding-top:0}}
+
+  /* toolbar */
+  .toolbar{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(8px);margin:22px -8px 0;padding:12px 8px;border-radius:14px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;border:1px solid var(--line-soft)}
+  .progress-blk{display:flex;align-items:center;gap:12px;flex:1;min-width:220px}
+  .ring-wrap{position:relative;display:grid;place-items:center}
+  .ring{--p:0;width:44px;height:44px;border-radius:50%;flex:none;background:conic-gradient(var(--good) calc(var(--p)*1%),var(--line) 0);display:grid;place-items:center}
+  .ring::after{content:"";width:34px;height:34px;border-radius:50%;background:var(--card)}
+  .ring-wrap b{position:absolute;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .p-txt{font-size:13.5px;color:var(--ink-soft)}
+  .p-txt b{font-family:var(--serif);color:var(--ink);font-size:15px}
+  .tools{display:flex;flex-wrap:wrap;gap:8px}
+
+  .days{margin-top:22px;display:flex;flex-direction:column;gap:14px}
+  .daycard{display:grid;grid-template-columns:104px 1fr;background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;transition:box-shadow .18s}
+  .daycard:hover{box-shadow:var(--shadow-lift)}
+  .daycard.alldone{border-color:color-mix(in srgb,var(--good) 45%,var(--line))}
+  .daycard.rest .rail{background:#3a4256}
+  .rail{background:var(--rail);color:var(--rail-ink);padding:16px 10px;display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center}
+  .rail .dn-label{font-size:10px;letter-spacing:.2em;text-transform:uppercase;opacity:.6}
+  .rail .dn{font-family:var(--fra);font-weight:900;font-size:36px;line-height:1;font-variant-numeric:tabular-nums}
+  .rail .dt{font-size:12px;opacity:.82;margin-top:6px;font-variant-numeric:tabular-nums}
+  .rail .wk{font-size:11px;opacity:.6}
+  .rail .avail{margin-top:8px;font-size:11px;opacity:.85;font-variant-numeric:tabular-nums;border-top:1px solid rgba(255,255,255,.15);padding-top:7px;width:100%}
+  .rail .tick{margin-top:8px;font-size:18px;color:var(--good);height:20px}
+  .body{padding:15px 18px;min-width:0}
+  .sec-h{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);font-weight:700;margin:0 0 10px;display:flex;align-items:center;gap:7px}
+  .sec-h .pen{font-size:11px;letter-spacing:0;text-transform:none;color:var(--accent-ink);font-weight:700;background:var(--accent-soft);padding:2px 8px;border-radius:999px}
+
+  .entries{display:flex;flex-direction:column;gap:8px}
+  .entry{display:grid;grid-template-columns:1.1fr 1.1fr 1.1fr 2fr .8fr auto;gap:7px;align-items:center;background:var(--paper);border:1px solid var(--line-soft);border-radius:10px;padding:7px 8px}
+  .entry select,.entry input{padding:7px 8px;font-size:13px;border-radius:8px}
+  .entry .mins{display:flex;align-items:center;gap:3px}
+  .entry .mins input{width:52px;text-align:right}
+  .entry .mins span{font-size:11px;color:var(--ink-faint)}
+  .entry .rm{border:none;background:transparent;color:var(--ink-faint);cursor:pointer;font-size:16px;padding:2px 4px}
+  .entry .rm:hover{color:var(--warn)}
+  .entry .scopecustom{display:flex;gap:4px;align-items:center;min-width:0}
+  .entry .scopecustom input{flex:1;min-width:0}
+  .entry .usemenu{flex:none;border:1px solid var(--line);background:var(--card);color:var(--ink-soft);border-radius:7px;cursor:pointer;padding:6px 8px;font-size:13px}
+  .entry .usemenu:hover{border-color:var(--accent);color:var(--accent-ink)}
+  @media(max-width:720px){.entry{grid-template-columns:1fr 1fr;position:relative;padding-right:30px}.entry .rm{position:absolute;top:6px;right:6px}}
+  .add-entry{margin-top:9px}
+
+  .rev-sec{margin-top:16px;border-top:1px dashed var(--line);padding-top:14px}
+  .rev-list{display:flex;flex-direction:column;gap:8px}
+  .rev{display:flex;align-items:flex-start;gap:10px;padding:9px 11px;border-radius:11px;border:1px solid var(--line-soft);background:var(--paper);cursor:pointer}
+  .rev.done{opacity:.5}
+  .rev.done .rtext .what{text-decoration:line-through}
+  .rev input[type=checkbox]{margin-top:3px;width:18px;height:18px;accent-color:var(--good);flex:none;cursor:pointer}
+  .rev .badge{flex:none;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;color:#20262f;border:1px solid;font-family:var(--sans)}
+  .b-yellow{background:var(--hl-yellow);border-color:var(--hl-yellow-b)}
+  .b-pink{background:var(--hl-pink);border-color:var(--hl-pink-b)}
+  .b-solve{background:var(--hl-solve);border-color:var(--hl-solve-b)}
+  .b-deep{background:var(--hl-deep);border-color:var(--hl-deep-b)}
+  :root[data-theme="dark"] .rev .badge,:root:not([data-theme="light"]) .rev .badge{color:#0c0f16}
+  .rtext{font-size:13.5px;color:var(--ink-soft);min-width:0}
+  .rtext .what{color:var(--ink);font-weight:500}
+  .rtext .what .sjname{font-family:var(--serif);font-weight:700}
+  .rtext .hint{display:block;font-size:12px;color:var(--ink-faint);margin-top:1px}
+  .rev-empty{font-size:13px;color:var(--ink-faint);font-style:italic;padding:2px 0}
+
+  .cap{margin-top:14px;padding:10px 12px;border-radius:11px;background:var(--paper);border:1px solid var(--line-soft)}
+  .cap.over{background:var(--warn-soft);border-color:var(--warn)}
+  .cap .caphead{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;font-variant-numeric:tabular-nums}
+  .cap .caphead b{font-family:var(--serif);color:var(--ink)}
+  .cap.over .caphead b{color:var(--warn)}
+  .capbar{height:7px;border-radius:99px;background:var(--line);overflow:hidden}
+  .capbar span{display:block;height:100%;background:var(--good);border-radius:99px}
+  .cap.over .capbar span{background:var(--warn)}
+  .cap .capwarn{font-size:12px;color:var(--warn);margin-top:6px;font-weight:600}
+
+  footer{margin-top:40px;border-top:1px solid var(--line);padding-top:22px;color:var(--ink-soft);font-size:13.5px}
+  footer h3{font-family:var(--serif);font-size:14px;color:var(--ink);margin:0 0 10px}
+  footer ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+  footer .src{margin-top:16px;font-size:12px;color:var(--ink-faint)}
+
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--rail);color:var(--rail-ink);padding:11px 20px;border-radius:999px;font-size:14px;font-weight:600;box-shadow:var(--shadow-lift);opacity:0;pointer-events:none;transition:.25s;z-index:60}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  @media print{
+    .toolbar,details.method,.chip-add,.add-entry,footer .src,.entry .rm,.win .rm,.addwin{display:none!important}
+    body{background:#fff}
+    .daycard{break-inside:avoid;box-shadow:none;border-color:#ccc}
+  }
+  @media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <p class="eyebrow">1 · 4 · 7 · 14 間隔複習法</p>
+    <h1 class="title">把「忘記」<br>擋在遺忘曲線<span class="num">之前</span></h1>
+    <p class="lede">選好起訖日期與每週能讀書的時段，每天挑一點新進度（<b>年級 → 科目 → 版本 → 範圍</b>），系統就依 <b>1／4／7／14 讀書法</b>自動幫你排出「今天該回頭複習哪幾天」，還會估算當天塞不塞得下。</p>
+
+    <details class="method">
+      <summary>這個方法怎麼運作？ <span class="chev">›</span></summary>
+      <div class="method-body">
+        <p>核心是一條很簡單的算式 —— 用「今天的天數」減去 1、3、6、13，得到的日子就是今天要複習的進度：</p>
+        <div class="formula">今天第 <b>D</b> 天 → 複習 <b>D−1</b>、<b>D−3</b>、<b>D−6</b>、<b>D−13</b> 天的內容</div>
+        <p>所以你在<b>第 1 天</b>讀的東西，會在第 2、4、7、14 天各被複習一次，正好落在 <b>Ebbinghaus 遺忘曲線</b>快速下滑的時間點上。節奏上：Day 1 輕量熱身、不貪多；Day 7 開始動手解題；Day 14 複習量最大、只掃深色重點。</p>
+      </div>
+    </details>
+
+    <div class="legend" id="legend"></div>
+  </header>
+
+  <section class="panel">
+    <h2><span class="dot"></span>計畫設定</h2>
+    <div class="grid-set">
+      <label class="fld">目標名稱
+        <input type="text" id="goal" placeholder="例如：期中考衝刺、學測生物">
+      </label>
+      <label class="fld">開始日期
+        <input type="date" id="start">
+      </label>
+      <label class="fld">結束日期
+        <input type="date" id="end">
+      </label>
+      <label class="fld">每個「新單元」預估分鐘
+        <input type="number" id="estnew" min="5" max="240" step="5">
+      </label>
+    </div>
+
+    <div class="subj-wrap">
+      <div class="cap">科目（新進度選單的科目來源，可自由增減）</div>
+      <div class="chips" id="chips"></div>
+      <div class="hintline">「自然」已內建 <b>翰林／康軒</b>（一上～三下）章節目錄：新增進度時選好年級＋版本，範圍就會變成該版本的章節下拉選單；其他科目或版本則以自訂輸入。</div>
+    </div>
+
+    <div class="tt">
+      <div class="tt-cap">每週可利用的複習時段（每週固定循環，套用到整段期間；用來估算每天塞不塞得下）</div>
+      <div class="tt-grid" id="ttgrid"></div>
+    </div>
+  </section>
+
+  <div class="toolbar">
+    <div class="progress-blk">
+      <div class="ring-wrap"><div class="ring" id="ring"></div><b id="ringtxt">0%</b></div>
+      <div class="p-txt">複習完成度<br><b id="ptxt">0 / 0</b> 個複習項目</div>
+    </div>
+    <div class="tools">
+      <button class="btn mini" id="sample">載入範例</button>
+      <button class="btn mini" id="clear">清空進度</button>
+      <button class="btn mini" id="copy">複製成表格</button>
+      <button class="btn mini solid" id="print">列印 / 存 PDF</button>
+    </div>
+  </div>
+
+  <div class="days" id="days"></div>
+
+  <footer>
+    <h3>使用這套方法時，記得幾件事</h3>
+    <ol>
+      <li>進度量要嚴格控制，<b>寧可少、不要貪多</b>——當天容量條變紅就是提醒你排太滿了。</li>
+      <li>需要高度自律、不能中斷；某天斷掉時，把後面的進度整體往後對齊即可。</li>
+      <li>當天剛讀完<b>不要馬上解題</b>，等到第 3 次複習（第 7 天）再開始練題。</li>
+      <li>這是長期記憶的方法，<b>不適合考前幾天的短衝</b>；初期會覺得慢，是正常的。</li>
+      <li>撐過 14 天後，可升級為 1／4／7／14／30 讀書法，把間隔再拉長。</li>
+    </ol>
+    <p class="src">方法出自韓國李相旭醫師《絕對不會背叛你的讀書竅門》。你的進度會自動存在這個瀏覽器裡，下次打開還在。</p>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* ===== 複習階段：忠實對應 1/4/7/14 三色標記，並附各階段預估分鐘 ===== */
+var STAGES=[
+  {off:1, n:1, cls:"b-yellow", swatch:"var(--hl-yellow)", pen:"黃色螢光筆", hint:"標出重要、但還沒熟記的地方", min:20},
+  {off:3, n:2, cls:"b-pink",   swatch:"var(--hl-pink)",   pen:"粉紅色螢光筆", hint:"標出仍然記不住的部分", min:15},
+  {off:6, n:3, cls:"b-solve",  swatch:"var(--hl-solve)",  pen:"螢光筆重點 · 開始解題", hint:"只看螢光筆掃讀，並開始練習題目", min:25},
+  {off:13,n:4, cls:"b-deep",   swatch:"var(--hl-deep)",   pen:"深色螢光筆快速掃", hint:"只看深色重點，快速掃讀精華", min:10}
+];
+var WK=["日","一","二","三","四","五","六"];
+var GRADES=["一上","一下","二上","二下","三上","三下"];
+var VERSIONS=["翰林","康軒","南一","自訂"];
+var KEY="study-rhythm-v3";
+
+/* ===== 章節目錄（自然科，依 114/115 翰林・康軒目錄整理；主題→節） ===== */
+var _T=function(a){return a.map(function(x){return{u:x[0],s:x[1]};});};
+var TOC={"自然":{
+ "康軒":{
+  "一上":_T([
+   ["1 生命的特性",["1-1 生命現象","1-2 細胞","1-3 細胞所需的物質","1-4 從細胞到個體"]],
+   ["跨科主題 世界的各種大小樣貌",["第1節 巨觀尺度與微觀尺度","第2節 尺度的表示與比較"]],
+   ["2 養分",["2-1 食物中的養分","2-2 酵素","2-3 植物如何獲得養分","2-4 動物如何獲得養分"]],
+   ["3 生物的運輸與防禦",["3-1 植物的運輸構造","3-2 植物體內物質的運輸","3-3 人體內物質的運輸","3-4 人體的防禦作用"]],
+   ["4 生物的協調作用",["4-1 神經系統","4-2 內分泌系統","4-3 生物的感應"]],
+   ["5 生物的恆定性",["5-1 恆定性與體溫的恆定","5-2 呼吸與氣體的恆定","5-3 血糖的恆定","5-4 排泄作用與水分的恆定"]]
+  ]),
+  "二上":_T([
+   ["1 基本測量",["1-1 長度與體積的測量","1-2 質量與密度的測量"]],
+   ["2 物質的世界",["2-1 認識物質","2-2 水溶液","2-3 空氣的組成"]],
+   ["跨科主題",["跨科主題 物質的分離"]],
+   ["3 波動與聲音",["3-1 波的傳播","3-2 聲波的產生與傳播","3-3 聲波的反射與超聲波","3-4 多變的聲音"]],
+   ["4 光",["4-1 光的傳播與光速","4-2 光的反射與面鏡","4-3 光的折射與透鏡","4-4 光學儀器","4-5 光與顏色"]],
+   ["5 溫度與熱",["5-1 溫度與溫度計","5-2 熱量與比熱","5-3 熱對物質的影響","5-4 熱的傳播方式"]],
+   ["6 探索物質組成",["6-1 元素的探索","6-2 元素週期表","6-3 化合物與原子概念的發展","6-4 分子與化學式"]]
+  ]),
+  "三上":_T([
+   ["1 直線運動",["1-1 時間的測量","1-2 位移與路徑長","1-3 速率與速度","1-4 加速度與等加速度運動"]],
+   ["2 力與運動",["2-1 牛頓第一運動定律","2-2 牛頓第二運動定律","2-3 牛頓第三運動定律","2-4 圓周運動與萬有引力"]],
+   ["3 功與能",["3-1 功與功率","3-2 動能、位能與能量守恆","3-3 槓桿原理與靜力平衡","3-4 簡單機械"]],
+   ["4 基本的靜電現象與電路",["4-1 靜電現象","4-2 電流","4-3 電壓","4-4 電阻與歐姆定律"]],
+   ["跨科主題 能源",["第1節 認識能源","第2節 能源的發展與應用"]],
+   ["5 水與陸地",["5-1 地球上的水","5-2 地貌的改變與平衡","5-3 地球上的岩石"]],
+   ["6 板塊運動與地球歷史",["6-1 地球構造與板塊運動","6-2 岩層記錄的地球歷史","6-3 臺灣的板塊和地震"]],
+   ["7 運動中的天體",["7-1 我們的宇宙","7-2 轉動的地球","7-3 日地月相對運動"]]
+  ]),
+  "一下":_T([
+   ["1 生殖",["1-1 細胞的分裂","1-2 無性生殖","1-3 有性生殖"]],
+   ["2 遺傳",["2-1 解開遺傳的奧祕","2-2 人類的遺傳","2-3 突變","2-4 生物技術的應用"]],
+   ["3 地球上的生物",["3-1 持續改變的生命","3-2 生物的命名與分類","3-3 原核生物與原生生物","3-4 真菌界","3-5 植物界","3-6 動物界"]],
+   ["4 生態系",["4-1 生物生存的環境","4-2 能量的流動與物質的循環","4-3 生物的交互關係","4-4 多采多姿的生態系"]],
+   ["5 人類與環境",["5-1 生物多樣性的重要性與危機","5-2 維護生物多樣性"]],
+   ["跨科主題 人、植物與環境的共存關係",["第1節 植物對水土保持的重要性","第2節 植物調節環境的能力"]]
+  ]),
+  "二下":_T([
+   ["1 化學反應",["1-1 質量守恆","1-2 化學反應的微觀世界"]],
+   ["2 氧化與還原",["2-1 氧化反應","2-2 氧化與還原反應"]],
+   ["3 電解質及酸鹼反應",["3-1 認識電解質","3-2 常見的酸、鹼性物質","3-3 水溶液的酸鹼性","3-4 酸鹼中和"]],
+   ["4 反應速率與平衡",["4-1 反應速率","4-2 可逆反應與平衡"]],
+   ["5 有機化合物",["5-1 認識有機化合物","5-2 常見的有機化合物","5-3 肥皂與清潔劑","5-4 生活中的有機聚合物"]],
+   ["跨科主題",["跨科主題 低碳減塑護地球"]],
+   ["6 力與壓力",["6-1 力與平衡","6-2 摩擦力","6-3 壓力","6-4 浮力"]]
+  ]),
+  "三下":_T([
+   ["1 電的應用",["1-1 電流的熱效應與電能","1-2 電與生活","1-3 電池","1-4 電流的化學效應"]],
+   ["2 電流與磁現象",["2-1 磁鐵與磁場","2-2 電流的磁效應","2-3 電流與磁場的交互作用","2-4 電磁感應"]],
+   ["3 千變萬化的天氣",["3-1 大氣的組成和結構","3-2 天氣變化","3-3 氣團和鋒面","3-4 臺灣的氣象災害"]],
+   ["跨科主題 全球氣候變遷與因應",["4-1 海洋與大氣的交互作用","4-2 溫室效應與全球暖化"]]
+  ])
+ },
+ "翰林":{
+  "一上":_T([
+   ["1 生命世界與科學方法",["1-1 多彩多姿的生命世界","1-2 探究自然的科學方法","1-3 進入實驗室"]],
+   ["2 生物體的組成",["2-1 生物體的基本單位","2-2 細胞的構造","2-3 物質進出細胞的方式","2-4 生物體的組成層次","跨科主題 尺度"]],
+   ["3 生物體的營養",["3-1 食物中的養分與能量","3-2 酵素","3-3 植物如何製造養分","3-4 人體如何獲得養分"]],
+   ["4 生物體的運輸作用",["4-1 植物的運輸構造","4-2 植物體內物質的運輸","4-3 人體心血管系統的組成","4-4 人體的循環系統"]],
+   ["5 生物體的協調作用",["5-1 刺激與反應","5-2 神經系統","5-3 內分泌系統","5-4 行為與感應"]],
+   ["6 生物體的恆定",["6-1 呼吸與氣體的恆定","6-2 排泄與水分的恆定","6-3 體溫的恆定與血糖的恆定"]]
+  ]),
+  "二上":_T([
+   ["1 基本測量",["1-1 長度、質量與時間","1-2 測量與估計","1-3 體積與密度"]],
+   ["2 物質的世界",["2-1 認識物質","2-2 溶液與濃度","2-3 混合物的分離"]],
+   ["3 波動與聲音",["3-1 波的傳播與特徵","3-2 聲音的形成","3-3 多變的聲音","3-4 聲波的傳播與應用"]],
+   ["4 光、影像與顏色",["4-1 光的傳播","4-2 光的反射與面鏡成像","4-3 光的折射","4-4 透鏡成像","4-5 色散與顏色"]],
+   ["5 溫度與熱",["5-1 溫度與溫度計","5-2 熱量","5-3 比熱","5-4 熱對物質的影響","5-5 熱的傳播方式"]],
+   ["6 物質的基本結構",["6-1 元素與化合物","6-2 生活中常見的元素","6-3 原子結構","6-4 週期表","6-5 分子與化學式"]],
+   ["跨科主題",["跨科主題 太陽——地球的生命之光"]]
+  ]),
+  "三上":_T([
+   ["1 直線運動",["1-1 位置、路徑長與位移","1-2 速率與速度","1-3 加速度運動","1-4 自由落體運動"]],
+   ["2 力與運動",["2-1 慣性定律","2-2 運動定律","2-3 作用力與反作用力定律","2-4 圓周運動與萬有引力","2-5 力矩與槓桿原理"]],
+   ["3 功與能",["3-1 功與功率","3-2 動能與位能","3-3 能量守恆定律與能源","3-4 簡單機械"]],
+   ["4 電流、電壓與歐姆定律",["4-1 電荷與靜電現象","4-2 電流","4-3 電壓","4-4 歐姆定律與電阻"]],
+   ["跨科主題",["跨科主題 能量與能源"]],
+   ["5 地球的環境",["5-1 我們的地球","5-2 地表的改變與平衡","5-3 岩石與礦物"]],
+   ["6 板塊運動與岩層的祕密",["6-1 地球的構造與板塊運動","6-2 板塊運動與內營力的影響","6-3 岩層的紀錄"]],
+   ["7 浩瀚的宇宙",["7-1 宇宙與太陽系","7-2 晝夜與四季","7-3 日地月的相對運動"]]
+  ]),
+  "一下":_T([
+   ["1 生殖",["1-1 細胞的分裂","1-2 無性生殖","1-3 有性生殖"]],
+   ["2 遺傳",["2-1 遺傳、染色體與基因","2-2 人類的遺傳","2-3 突變與遺傳疾病","2-4 生物技術"]],
+   ["3 生物的演化與分類",["3-1 化石與演化","3-2 生物的命名與分類","3-3 原核、原生生物及真菌界","3-4 植物界","3-5 動物界"]],
+   ["4 生物與環境",["4-1 族群、群集與演替","4-2 生物間的互動關係","4-3 生態系","4-4 生態系的類型"]],
+   ["5 生物多樣性與保育",["5-1 生物多樣性","5-2 生物多樣性面臨的危機","5-3 保育的落實"]],
+   ["跨科主題",["跨科主題 環境的永續發展"]]
+  ]),
+  "二下":_T([
+   ["1 化學反應",["1-1 質量守恆定律","1-2 化學反應的表示法"]],
+   ["2 氧化還原反應",["2-1 氧化反應與活性","2-2 氧化與還原反應"]],
+   ["3 電解質與酸鹼鹽",["3-1 電解質","3-2 酸和鹼","3-3 酸鹼的強弱與pH值","3-4 酸鹼反應"]],
+   ["4 反應速率與平衡",["4-1 反應速率","4-2 可逆反應與平衡"]],
+   ["5 有機化合物",["5-1 有機化合物的組成","5-2 常見的有機化合物","5-3 聚合物與衣料纖維","5-4 食品與清潔劑"]],
+   ["6 力與壓力",["6-1 力與平衡","6-2 摩擦力","6-3 壓力","6-4 浮力"]],
+   ["跨科主題",["跨科主題 永續──人類與環境的平衡"]]
+  ]),
+  "三下":_T([
+   ["1 電與生活",["1-1 電流的熱效應","1-2 生活用電","1-3 電池","1-4 電流的化學效應"]],
+   ["2 電與磁",["2-1 磁鐵與磁場","2-2 電流的磁效應","2-3 電流與磁場的交互作用","2-4 電磁感應"]],
+   ["3 變化莫測的天氣",["3-1 地球的大氣","3-2 天氣現象","3-3 氣團與鋒面","3-4 臺灣的災變天氣"]],
+   ["4 永續的地球",["4-1 海洋與大氣的互動","4-2 全球變遷","4-3 人與自然的互動"]]
+  ])
+ }
+}};
+
+/* ===== state ===== */
+var S=load()||defaultState();
+function defaultState(){
+  var t=todayISO();
+  return {
+    goal:"", start:t, end:addDaysISO(t,13),
+    estNew:40,
+    subjects:[{id:uid(),name:"自然"},{id:uid(),name:"數學"},{id:uid(),name:"英文"}],
+    time:defaultTime(),
+    entries:{}, done:{}
+  };
+}
+function defaultTime(){
+  var o={};
+  for(var i=0;i<7;i++){
+    var weekend=(i===0||i===6);
+    o[i]={on:true,wins:weekend?[{s:"14:00",e:"17:00"}]:[{s:"19:00",e:"21:00"}]};
+  }
+  return o;
+}
+
+function uid(){return Math.random().toString(36).slice(2,8);}
+function todayISO(){var d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10);}
+function addDaysISO(iso,n){var d=new Date(iso+"T00:00:00");d.setDate(d.getDate()+n);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10);}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function load(){try{var r=localStorage.getItem(KEY);return r?JSON.parse(r):null;}catch(e){return null;}}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+
+function numDays(){
+  var a=new Date(S.start+"T00:00:00"), b=new Date(S.end+"T00:00:00");
+  if(isNaN(a)||isNaN(b))return 14;
+  var d=Math.floor((b-a)/86400000)+1;
+  if(d<1)d=1; if(d>180)d=180;
+  return d;
+}
+function dateOf(day){var d=new Date(S.start+"T00:00:00");if(isNaN(d))d=new Date();d.setDate(d.getDate()+(day-1));return d;}
+function minToHM(m){var h=Math.floor(m/60),mm=m%60;if(!h)return mm+"分";return h+"h"+(mm?(" "+mm+"分"):"");}
+function winMin(w){var a=(w.s||"").split(":"),b=(w.e||"").split(":");if(a.length<2||b.length<2)return 0;var m=(+b[0]*60+ +b[1])-(+a[0]*60+ +a[1]);return m>0?m:0;}
+function availMin(weekday){var t=S.time[weekday];if(!t||!t.on)return 0;return t.wins.reduce(function(s,w){return s+winMin(w);},0);}
+
+/* ===== legend ===== */
+(function(){
+  var items=[{sw:"var(--rail)",stg:"初讀",pn:"原子筆畫線"}].concat(STAGES.map(function(s){return{sw:s.swatch,stg:"第"+s.n+"次複習",pn:s.pen};}));
+  document.getElementById("legend").innerHTML=items.map(function(i){
+    return '<span class="lg"><span class="swatch" style="background:'+i.sw+'"></span><span class="stg">'+i.stg+'</span><span class="pn">'+esc(i.pn)+'</span></span>';
+  }).join("");
+})();
+
+/* ===== setup controls ===== */
+var goalEl=document.getElementById("goal"),startEl=document.getElementById("start"),endEl=document.getElementById("end"),estEl=document.getElementById("estnew");
+goalEl.value=S.goal; startEl.value=S.start; endEl.value=S.end; estEl.value=S.estNew;
+goalEl.addEventListener("input",function(){S.goal=goalEl.value;save();});
+startEl.addEventListener("change",function(){S.start=startEl.value||todayISO();if(S.end<S.start)S.end=addDaysISO(S.start,13),endEl.value=S.end;save();renderDays();});
+endEl.addEventListener("change",function(){S.end=endEl.value||S.start;save();renderDays();});
+estEl.addEventListener("change",function(){var v=+estEl.value;S.estNew=(v&&v>0)?v:40;estEl.value=S.estNew;save();renderDays();});
+
+/* ===== subjects ===== */
+function renderChips(){
+  var c=document.getElementById("chips");
+  c.innerHTML=S.subjects.map(function(s){
+    return '<span class="chip">'+esc(s.name)+'<button data-id="'+s.id+'" title="移除" aria-label="移除">×</button></span>';
+  }).join("")+'<span class="chip-add"><input type="text" id="newsubj" placeholder="新增科目" maxlength="12"><button class="btn mini" id="addsubj">＋ 加入</button></span>';
+  c.querySelectorAll(".chip button[data-id]").forEach(function(b){
+    b.addEventListener("click",function(){S.subjects=S.subjects.filter(function(x){return x.id!==b.dataset.id;});save();renderChips();renderDays();});
+  });
+  var inp=document.getElementById("newsubj"),add=document.getElementById("addsubj");
+  function doAdd(){var v=inp.value.trim();if(!v)return;S.subjects.push({id:uid(),name:v});save();renderChips();renderDays();var ni=document.getElementById("newsubj");if(ni)ni.focus();}
+  add.addEventListener("click",doAdd);
+  inp.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();doAdd();}});
+}
+
+/* ===== weekly time template ===== */
+function renderTT(){
+  var g=document.getElementById("ttgrid");
+  g.innerHTML=[1,2,3,4,5,6,0].map(function(wd){
+    var t=S.time[wd], mins=availMin(wd);
+    var wins=t.wins.map(function(w,idx){
+      return '<span class="win"><input type="time" data-wd="'+wd+'" data-i="'+idx+'" data-k="s" value="'+esc(w.s)+'"><span class="tilde">～</span><input type="time" data-wd="'+wd+'" data-i="'+idx+'" data-k="e" value="'+esc(w.e)+'"><button class="rm" data-rmwin="'+wd+'" data-i="'+idx+'" title="移除時段">×</button></span>';
+    }).join("");
+    return '<div class="ttrow'+(t.on?'':' off')+'">'+
+      '<label class="wd"><input type="checkbox" data-on="'+wd+'"'+(t.on?' checked':'')+'>週'+WK[wd]+'</label>'+
+      '<div class="wins">'+(t.on?wins+'<button class="addwin" data-addwin="'+wd+'">＋時段</button>':'<span style="font-size:13px;color:var(--ink-faint)">休息日</span>')+'</div>'+
+      '<div class="hrs">'+(t.on?(mins?("可用 "+minToHM(mins)):"未設定"):"—")+'</div></div>';
+  }).join("");
+
+  g.querySelectorAll("input[data-on]").forEach(function(cb){cb.addEventListener("change",function(){S.time[+cb.dataset.on].on=cb.checked;save();renderTT();renderDays();});});
+  g.querySelectorAll("input[type=time]").forEach(function(ip){ip.addEventListener("change",function(){var wd=+ip.dataset.wd,i=+ip.dataset.i,k=ip.dataset.k;S.time[wd].wins[i][k]=ip.value;save();renderTT();renderDays();});});
+  g.querySelectorAll("[data-addwin]").forEach(function(b){b.addEventListener("click",function(){S.time[+b.dataset.addwin].wins.push({s:"20:00",e:"21:00"});save();renderTT();renderDays();});});
+  g.querySelectorAll("[data-rmwin]").forEach(function(b){b.addEventListener("click",function(){var wd=+b.dataset.rmwin;S.time[wd].wins.splice(+b.dataset.i,1);save();renderTT();renderDays();});});
+}
+
+/* ===== entries helpers ===== */
+function entriesOf(day){return S.entries[day]||(S.entries[day]=[]);}
+function scopeGroups(sub,ver,grade){
+  if(sub&&ver&&grade&&TOC[sub]&&TOC[sub][ver]&&TOC[sub][ver][grade])return TOC[sub][ver][grade];
+  return null;
+}
+function selHTML(opts,val,ph,attrs){
+  var o='<option value="">'+ph+'</option>'+opts.map(function(x){return '<option'+(x===val?' selected':'')+'>'+esc(x)+'</option>';}).join("");
+  return '<select '+attrs+'>'+o+'</select>';
+}
+function scopeControl(day,e){
+  var groups=scopeGroups(e.subject,e.version,e.grade);
+  var attr='data-f="scope" data-day="'+day+'" data-id="'+e.id+'"';
+  if(groups&&!e._custom){
+    var inner=groups.map(function(g){
+      return '<optgroup label="'+esc(g.u)+'">'+g.s.map(function(x){return '<option'+(x===e.scope?' selected':'')+'>'+esc(x)+'</option>';}).join("")+'</optgroup>';
+    }).join("");
+    return '<select '+attr+'><option value="">選章節</option>'+inner+'<option value="__custom__">自訂…</option></select>';
+  }
+  var back=groups?'<button class="usemenu" data-usemenu="'+day+'" data-id="'+e.id+'" title="改用章節選單">☰</button>':'';
+  return '<span class="scopecustom"><input type="text" '+attr+' value="'+esc(e.scope)+'" placeholder="範圍／章節（自訂）">'+back+'</span>';
+}
+function entryRow(day,e){
+  var subs=S.subjects.map(function(s){return s.name;});
+  return '<div class="entry">'+
+    selHTML(GRADES,e.grade,"年級",'data-f="grade" data-day="'+day+'" data-id="'+e.id+'"')+
+    selHTML(subs,e.subject,"科目",'data-f="subject" data-day="'+day+'" data-id="'+e.id+'"')+
+    selHTML(VERSIONS,e.version,"版本",'data-f="version" data-day="'+day+'" data-id="'+e.id+'"')+
+    scopeControl(day,e)+
+    '<span class="mins"><input type="number" min="5" max="240" step="5" data-f="min" data-day="'+day+'" data-id="'+e.id+'" value="'+(e.min||"")+'" placeholder="'+S.estNew+'"><span>分</span></span>'+
+    '<button class="rm" data-rment="'+day+'" data-id="'+e.id+'" title="移除">×</button>'+
+    '</div>';
+}
+
+/* ===== day cards ===== */
+function renderDays(){
+  var box=document.getElementById("days"), N=numDays(), html="";
+  for(var day=1;day<=N;day++){
+    var d=dateOf(day), wd=d.getDay();
+    var mdd=(d.getMonth()+1)+"/"+d.getDate(), wkl="週"+WK[wd];
+    var avail=availMin(wd), rest=!S.time[wd].on;
+
+    var ents=entriesOf(day);
+    var entHtml=ents.map(function(e){return entryRow(day,e);}).join("");
+
+    /* reviews due today */
+    var revs=[];
+    STAGES.forEach(function(st){
+      var src=day-st.off; if(src<1)return;
+      (S.entries[src]||[]).forEach(function(e){
+        if(!e.scope||!e.subject)return;
+        var dkey="d_"+day+"_"+e.id+"_"+st.n;
+        revs.push({st:st,src:src,e:e,dkey:dkey,done:!!S.done[dkey]});
+      });
+    });
+    var revHtml=revs.length?revs.map(function(r){
+      var lbl=(r.e.subject||"")+(r.e.grade?("·"+r.e.grade):"")+(r.e.version?("·"+r.e.version):"");
+      return '<label class="rev'+(r.done?' done':'')+'"><input type="checkbox" data-dkey="'+r.dkey+'"'+(r.done?' checked':'')+'>'+
+        '<span class="badge '+r.st.cls+'">第'+r.st.n+'次</span>'+
+        '<span class="rtext"><span class="what">複習 <b>第'+r.src+'天</b> · <span class="sjname">'+esc(lbl)+'</span>：'+esc(r.e.scope)+'</span>'+
+        '<span class="hint">'+esc(r.st.pen)+' — '+esc(r.st.hint)+'</span></span></label>';
+    }).join(""):'<div class="rev-empty">今天沒有到期的複習，專心把新進度讀好即可。</div>';
+
+    /* capacity */
+    var usedNew=ents.reduce(function(s,e){return s+((e.subject)?(+e.min||S.estNew):0);},0);
+    var usedRev=revs.reduce(function(s,r){return s+r.st.min;},0);
+    var used=usedNew+usedRev;
+    var pct=avail>0?Math.min(100,Math.round(used/avail*100)):(used>0?100:0);
+    var over=avail>0&&used>avail;
+    var capHtml=rest
+      ? '<div class="cap"><div class="caphead"><span>休息日</span><span>已排 <b>'+minToHM(used)+'</b></span></div><div class="capbar"><span style="width:'+(used>0?100:0)+'%;background:var(--warn)"></span></div>'+(used>0?'<div class="capwarn">這天設為休息日，卻排了進度，記得改設定或移到其他天。</div>':'')+'</div>'
+      : '<div class="cap'+(over?' over':'')+'"><div class="caphead"><span>當天負荷</span><span>預估 <b>'+minToHM(used)+'</b> ／ 可用 '+(avail>0?minToHM(avail):"未設定")+'</span></div><div class="capbar"><span style="width:'+pct+'%"></span></div>'+(over?'<div class="capwarn">時段可能不夠，考慮減少新進度或移到別天。</div>':(avail===0&&used>0?'<div class="capwarn">這天還沒設定可用時段，無法估算負荷。</div>':''))+'</div>';
+
+    var total=revs.length, done=revs.filter(function(r){return r.done;}).length, allDone=total>0&&done===total;
+
+    html+='<article class="daycard'+(allDone?' alldone':'')+(rest?' rest':'')+'">'+
+      '<div class="rail"><span class="dn-label">Day</span><span class="dn">'+day+'</span>'+
+        '<span class="dt">'+mdd+'</span><span class="wk">'+wkl+'</span>'+
+        '<span class="avail">'+(rest?'休息':(avail>0?('可用 '+minToHM(avail)):'未設時段'))+'</span>'+
+        '<span class="tick">'+(allDone?'✓':'')+'</span></div>'+
+      '<div class="body">'+
+        '<p class="sec-h">新進度 <span class="pen">原子筆畫線標記</span></p>'+
+        '<div class="entries">'+(entHtml||'<div class="rev-empty">還沒排進度。按下方按鈕新增當天要讀的單元。</div>')+'</div>'+
+        '<div class="add-entry"><button class="btn ghost mini" data-addent="'+day+'">＋ 新增進度</button></div>'+
+        '<div class="rev-sec"><p class="sec-h">今日複習 '+(total?'<span class="pen">'+done+' / '+total+' 完成</span>':'')+'</p><div class="rev-list">'+revHtml+'</div></div>'+
+        capHtml+
+      '</div></article>';
+  }
+  box.innerHTML=html;
+  wireDays();
+  updateProgress();
+}
+
+function wireDays(){
+  var box=document.getElementById("days");
+  box.querySelectorAll("[data-addent]").forEach(function(b){b.addEventListener("click",function(){
+    var day=+b.dataset.addent;
+    entriesOf(day).push({id:uid(),grade:"",subject:S.subjects[0]?S.subjects[0].name:"",version:"",scope:"",min:null});
+    save();renderDays();
+  });});
+  box.querySelectorAll("[data-rment]").forEach(function(b){b.addEventListener("click",function(){
+    var day=+b.dataset.rment;S.entries[day]=entriesOf(day).filter(function(e){return e.id!==b.dataset.id;});save();renderDays();
+  });});
+  // selects & scope-select & min → re-render (dependencies change)
+  box.querySelectorAll('select[data-f], input[data-f="min"]').forEach(function(ctrl){
+    ctrl.addEventListener("change",function(){
+      var e=findEntry(+ctrl.dataset.day,ctrl.dataset.id); if(!e)return;
+      var f=ctrl.dataset.f, v=ctrl.value;
+      if(f==="min"){e.min=v?+v:null;}
+      else if(f==="scope"){ if(v==="__custom__"){e._custom=true;e.scope="";} else {e.scope=v;e._custom=false;} }
+      else{e[f]=v;e._custom=false;}
+      save();renderDays();
+    });
+  });
+  box.querySelectorAll("[data-usemenu]").forEach(function(b){b.addEventListener("click",function(){
+    var e=findEntry(+b.dataset.usemenu,b.dataset.id);if(e){e._custom=false;e.scope="";save();renderDays();}
+  });});
+  // scope text input → save live, no re-render (keep focus)
+  box.querySelectorAll('input[data-f="scope"]').forEach(function(ip){
+    ip.addEventListener("input",function(){var e=findEntry(+ip.dataset.day,ip.dataset.id);if(e){e.scope=ip.value;save();}});
+    ip.addEventListener("change",function(){renderDays();});
+  });
+  // review checkboxes
+  box.querySelectorAll('input[data-dkey]').forEach(function(cb){
+    cb.addEventListener("change",function(){
+      if(cb.checked)S.done[cb.dataset.dkey]=1;else delete S.done[cb.dataset.dkey];
+      save();
+      var lab=cb.closest(".rev");if(lab)lab.classList.toggle("done",cb.checked);
+      refreshDoneMarks();updateProgress();
+    });
+  });
+}
+function findEntry(day,id){return (S.entries[day]||[]).find(function(e){return e.id===id;});}
+
+function refreshDoneMarks(){
+  document.querySelectorAll(".daycard").forEach(function(card){
+    var cbs=card.querySelectorAll("input[data-dkey]");var total=cbs.length,done=0;cbs.forEach(function(c){if(c.checked)done++;});
+    var all=total>0&&done===total;card.classList.toggle("alldone",all);
+    var tick=card.querySelector(".tick");if(tick)tick.textContent=all?"✓":"";
+    var pen=card.querySelector(".rev-sec .pen");if(pen&&total)pen.textContent=done+" / "+total+" 完成";
+  });
+}
+function updateProgress(){
+  var total=0,done=0;document.querySelectorAll("input[data-dkey]").forEach(function(c){total++;if(c.checked)done++;});
+  var pct=total?Math.round(done/total*100):0;
+  var ring=document.getElementById("ring");ring.style.setProperty("--p",pct);
+  document.getElementById("ringtxt").textContent=pct+"%";
+  document.getElementById("ptxt").textContent=done+" / "+total;
+}
+
+/* ===== toolbar ===== */
+document.getElementById("print").addEventListener("click",function(){window.print();});
+document.getElementById("clear").addEventListener("click",function(){
+  if(!confirm("確定要清空所有新進度與複習勾選嗎？（科目、時段與設定會保留）"))return;
+  S.entries={};S.done={};save();renderDays();toast("已清空進度");
+});
+document.getElementById("sample").addEventListener("click",function(){
+  var subs=S.subjects.map(function(s){return s.name;});
+  var s0=subs[0]||"自然", s1=subs[1]||"數學", s2=subs[2]||"英文";
+  var seed={
+    1:[{grade:"二上",subject:s0,version:"康軒",scope:"1-1 長度與體積的測量",min:40},{grade:"二上",subject:s1,version:"自訂",scope:"1-1 數與式",min:35}],
+    2:[{grade:"二上",subject:s0,version:"康軒",scope:"1-2 質量與密度的測量",min:40},{grade:"二上",subject:s2,version:"自訂",scope:"Unit 1 單字與文法",min:30}],
+    3:[{grade:"二上",subject:s0,version:"康軒",scope:"2-1 認識物質",min:45}],
+    4:[{grade:"二上",subject:s1,version:"自訂",scope:"1-2 多項式",min:35}],
+    5:[{grade:"二上",subject:s0,version:"康軒",scope:"2-2 水溶液",min:45},{grade:"二上",subject:s2,version:"自訂",scope:"Unit 2 閱讀",min:30}]
+  };
+  Object.keys(seed).forEach(function(day){
+    S.entries[day]=seed[day].map(function(o){return {id:uid(),grade:o.grade,subject:o.subject,version:o.version,scope:o.scope,min:o.min};});
+  });
+  save();renderDays();toast("已載入範例，往下捲看看複習與容量怎麼自動算");
+});
+document.getElementById("copy").addEventListener("click",function(){
+  var lines=[["天數","日期","週","類型","年級","科目","版本","範圍/章節","階段/預估"].join("\t")];
+  var N=numDays();
+  for(var day=1;day<=N;day++){
+    var d=dateOf(day),dt=(d.getMonth()+1)+"/"+d.getDate(),wk="週"+WK[d.getDay()];
+    (S.entries[day]||[]).forEach(function(e){
+      if(!e.subject&&!e.scope)return;
+      lines.push([("D"+day),dt,wk,"新進度",e.grade||"",e.subject||"",e.version||"",e.scope||"",((e.min||S.estNew)+"分")].join("\t"));
+    });
+    STAGES.forEach(function(st){
+      var src=day-st.off;if(src<1)return;
+      (S.entries[src]||[]).forEach(function(e){
+        if(!e.scope||!e.subject)return;
+        lines.push([("D"+day),dt,wk,"複習",e.grade||"",e.subject||"",e.version||"",("(第"+src+"天) "+e.scope),("第"+st.n+"次·"+st.pen)].join("\t"));
+      });
+    });
+  }
+  var txt=lines.join("\n");
+  navigator.clipboard.writeText(txt).then(function(){toast("已複製為表格，貼到 Excel／Google 試算表即可");},function(){
+    var ta=document.createElement("textarea");ta.value=txt;document.body.appendChild(ta);ta.select();
+    try{document.execCommand("copy");toast("已複製為表格");}catch(e){toast("複製失敗，請手動選取");}
+    document.body.removeChild(ta);
+  });
+});
+
+var toastEl=document.getElementById("toast"),toastT;
+function toast(m){toastEl.textContent=m;toastEl.classList.add("show");clearTimeout(toastT);toastT=setTimeout(function(){toastEl.classList.remove("show");},2800);}
+
+/* ===== init ===== */
+renderChips();
+renderTT();
+renderDays();
+</script>
+
+</body>
+</html>
