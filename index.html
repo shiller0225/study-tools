@@ -688,7 +688,7 @@ function printPlan(){
     var revs=r.revs.length?r.revs.map(esc).join("<br>"):"—";
     return '<tr><td class="c">Day '+r.day+'</td><td class="c">'+r.dt+'<br><span class="wk">'+r.wk+'</span></td><td>'+news+'</td><td>'+revs+'</td></tr>';
   }).join("");
-  var doc='<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><title>'+esc(title)+'　複習計畫</title>'+
+  var doc='<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><title>'+esc(title)+'</title>'+
     '<style>'+
     'body{font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;color:#1b2333;margin:24px;}'+
     'h1{font-size:20px;margin:0 0 4px;}.meta{color:#555;font-size:13px;margin-bottom:14px;}'+
@@ -700,7 +700,7 @@ function printPlan(){
     '.legend{margin-top:14px;font-size:11px;color:#666;line-height:1.7;}'+
     '@media print{body{margin:12mm;}thead{display:table-header-group;}}'+
     '</style></head><body>'+
-    '<h1>'+esc(title)+'　複習計畫</h1>'+
+    '<h1>'+esc(title)+'</h1>'+
     '<div class="meta">依 1／4／7／14 間隔複習法　·　期間 '+period+'　·　共 '+rows.length+' 天</div>'+
     '<table><thead><tr><th style="width:64px">天數</th><th style="width:78px">日期</th><th>新進度</th><th>今日複習</th></tr></thead><tbody>'+body+'</tbody></table>'+
     '<div class="legend">複習階段：第1次（黃色螢光筆）→ 第2次（粉紅色螢光筆）→ 第3次（螢光筆重點＋開始解題）→ 第4次（深色螢光筆快速掃）。<br>列印視窗開啟後，在「目的地／印表機」選擇「另存為 PDF」即可存成 PDF 檔。</div>'+
