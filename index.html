@@ -656,7 +656,61 @@ function updateProgress(){
 }
 
 /* ===== toolbar ===== */
-document.getElementById("print").addEventListener("click",function(){window.print();});
+/* 列印／存 PDF：開一個乾淨的列印專用視窗（可跳出 Google Sites 沙箱），把計畫轉成表格後觸發列印。
+   直接呼叫 iframe 內的 window.print() 會被沙箱（缺 allow-modals）忽略，故改用此法。 */
+function planRows(){
+  var N=numDays(), out=[];
+  for(var day=1;day<=N;day++){
+    var d=dateOf(day), dt=(d.getMonth()+1)+"/"+d.getDate(), wk="週"+WK[d.getDay()];
+    var news=(S.entries[day]||[]).filter(function(e){return e.subject||e.scope;}).map(function(e){
+      var lbl=[e.grade,e.subject,e.version].filter(Boolean).join("·");
+      return (lbl?lbl+"　":"")+(e.scope||"");
+    });
+    var revs=[];
+    STAGES.forEach(function(st){
+      var src=day-st.off; if(src<1)return;
+      (S.entries[src]||[]).forEach(function(e){
+        if(!e.scope||!e.subject)return;
+        revs.push("第"+src+"天·"+e.subject+"　"+e.scope+"（第"+st.n+"次·"+st.pen+"）");
+      });
+    });
+    out.push({day:day,dt:dt,wk:wk,news:news,revs:revs});
+  }
+  return out;
+}
+function printPlan(){
+  var rows=planRows();
+  var title=(S.goal&&S.goal.trim())?S.goal.trim():"複習計畫";
+  var sd=dateOf(1), ed=dateOf(numDays());
+  var period=(sd.getMonth()+1)+"/"+sd.getDate()+" ～ "+(ed.getMonth()+1)+"/"+ed.getDate();
+  var body=rows.map(function(r){
+    var news=r.news.length?r.news.map(esc).join("<br>"):"—";
+    var revs=r.revs.length?r.revs.map(esc).join("<br>"):"—";
+    return '<tr><td class="c">Day '+r.day+'</td><td class="c">'+r.dt+'<br><span class="wk">'+r.wk+'</span></td><td>'+news+'</td><td>'+revs+'</td></tr>';
+  }).join("");
+  var doc='<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><title>'+esc(title)+'　複習計畫</title>'+
+    '<style>'+
+    'body{font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;color:#1b2333;margin:24px;}'+
+    'h1{font-size:20px;margin:0 0 4px;}.meta{color:#555;font-size:13px;margin-bottom:14px;}'+
+    'table{width:100%;border-collapse:collapse;font-size:12.5px;}'+
+    'th,td{border:1px solid #b9c0cf;padding:6px 9px;vertical-align:top;text-align:left;}'+
+    'th{background:#2f52d9;color:#fff;font-size:12px;}'+
+    'td.c{white-space:nowrap;text-align:center;font-weight:700;}.wk{color:#8a93a6;font-weight:400;font-size:11px;}'+
+    'tbody tr:nth-child(even){background:#f4f6fa;}tr{break-inside:avoid;}'+
+    '.legend{margin-top:14px;font-size:11px;color:#666;line-height:1.7;}'+
+    '@media print{body{margin:12mm;}thead{display:table-header-group;}}'+
+    '</style></head><body>'+
+    '<h1>'+esc(title)+'　複習計畫</h1>'+
+    '<div class="meta">依 1／4／7／14 間隔複習法　·　期間 '+period+'　·　共 '+rows.length+' 天</div>'+
+    '<table><thead><tr><th style="width:64px">天數</th><th style="width:78px">日期</th><th>新進度</th><th>今日複習</th></tr></thead><tbody>'+body+'</tbody></table>'+
+    '<div class="legend">複習階段：第1次（黃色螢光筆）→ 第2次（粉紅色螢光筆）→ 第3次（螢光筆重點＋開始解題）→ 第4次（深色螢光筆快速掃）。<br>列印視窗開啟後，在「目的地／印表機」選擇「另存為 PDF」即可存成 PDF 檔。</div>'+
+    '<scr'+'ipt>window.onload=function(){setTimeout(function(){window.focus();window.print();},350);};window.onafterprint=function(){setTimeout(function(){window.close();},200);};</scr'+'ipt>'+
+    '</body></html>';
+  var w=window.open("","_blank");
+  if(!w){toast("請允許此網站開啟彈出視窗，才能列印／存 PDF");return;}
+  w.document.open();w.document.write(doc);w.document.close();
+}
+document.getElementById("print").addEventListener("click",printPlan);
 document.getElementById("clear").addEventListener("click",function(){
   if(!confirm("確定要清空所有新進度與複習勾選嗎？（科目、時段與設定會保留）"))return;
   S.entries={};S.done={};save();renderDays();toast("已清空進度");
