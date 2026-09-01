@@ -195,6 +195,29 @@
   .cap.over .capbar span{background:var(--warn)}
   .cap .capwarn{font-size:12px;color:var(--warn);margin-top:6px;font-weight:600}
 
+  /* 全期負荷總覽（熱力圖） */
+  #overview{margin-top:22px}
+  .ov h2 small{margin-left:auto;font-family:var(--sans);font-weight:400;font-size:12px;color:var(--ink-faint)}
+  .ov.alert{border-color:var(--warn)}
+  .ov-warn{background:var(--warn-soft);border:1px solid var(--warn);color:var(--warn);border-radius:11px;padding:11px 13px;font-size:13.5px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;line-height:1.9}
+  .ov-warn b{font-family:var(--serif)}
+  .ov-ok{color:var(--good);font-size:13.5px;margin-bottom:12px;font-weight:600}
+  .ovchip{border:1px solid var(--warn);background:var(--card);color:var(--warn);border-radius:999px;padding:3px 11px;font-size:12.5px;font-weight:700;cursor:pointer}
+  .ovchip:hover{background:var(--warn);color:#fff}
+  .hmwrap{display:flex;flex-wrap:wrap;gap:5px}
+  .hm{width:30px;height:30px;border-radius:7px;border:1px solid var(--line);font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;cursor:pointer;color:#20262f;display:flex;align-items:center;justify-content:center;transition:transform .1s}
+  .hm:hover{transform:scale(1.12)}
+  .hm.empty{background:var(--paper);color:var(--ink-faint)}
+  .hm.none{background:var(--card);border-style:dashed;color:var(--ink-faint)}
+  .hm.ok{background:#A8E0BD;border-color:#5FBF87}
+  .hm.warn{background:#FBD98A;border-color:#E7B23C}
+  .hm.over{background:#F0A88E;border-color:#D9683A}
+  .hm.rest{background:repeating-linear-gradient(45deg,#e2e6ee,#e2e6ee 3px,#f4f6fa 3px,#f4f6fa 6px);color:#8a93a6}
+  .hmlegend{display:flex;flex-wrap:wrap;gap:14px;margin-top:11px;font-size:12px;color:var(--ink-soft)}
+  .hmlegend i.k{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+  .hmlegend i.ok{background:#A8E0BD}.hmlegend i.warn{background:#FBD98A}.hmlegend i.over{background:#F0A88E}
+  .hmlegend i.rest{background:#d9dde6}.hmlegend i.none{background:transparent;border:1px dashed var(--line)}
+
   footer{margin-top:40px;border-top:1px solid var(--line);padding-top:22px;color:var(--ink-soft);font-size:13.5px}
   footer h3{font-family:var(--serif);font-size:14px;color:var(--ink);margin:0 0 10px}
   footer ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
@@ -272,6 +295,8 @@
       <button class="btn mini solid" id="print">列印 / 存 PDF</button>
     </div>
   </div>
+
+  <div id="overview"></div>
 
   <div class="days" id="days"></div>
 
@@ -623,9 +648,11 @@ function renderDays(){
     var used=usedNew+usedRev;
     var pct=avail>0?Math.min(100,Math.round(used/avail*100)):(used>0?100:0);
     var over=avail>0&&used>avail;
+    var overMsg="時段可能不夠，考慮減少新進度或移到別天。";
+    if(over){var sd=suggestLighterDay(day);if(sd){var sdd=dateOf(sd);overMsg="時段可能不夠（超出約 "+minToHM(used-avail)+"）：建議把一項新進度移到較空的 Day "+sd+"（"+(sdd.getMonth()+1)+"/"+sdd.getDate()+"）。";}else{overMsg="時段可能不夠（超出約 "+minToHM(used-avail)+"）：附近沒有較空的日子，建議減少當天新進度或延長時段。";}}
     var capHtml=rest
       ? '<div class="cap"><div class="caphead"><span>休息日</span><span>已排 <b>'+minToHM(used)+'</b></span></div><div class="capbar"><span style="width:'+(used>0?100:0)+'%;background:var(--warn)"></span></div>'+(used>0?'<div class="capwarn">這天設為休息日，卻排了進度，記得改設定或移到其他天。</div>':'')+'</div>'
-      : '<div class="cap'+(over?' over':'')+'"><div class="caphead"><span>當天負荷</span><span>預估 <b>'+minToHM(used)+'</b> ／ 可用 '+(avail>0?minToHM(avail):"未設定")+'</span></div><div class="capbar"><span style="width:'+pct+'%"></span></div>'+(over?'<div class="capwarn">時段可能不夠，考慮減少新進度或移到別天。</div>':(avail===0&&used>0?'<div class="capwarn">這天還沒設定可用時段，無法估算負荷。</div>':''))+'</div>';
+      : '<div class="cap'+(over?' over':'')+'"><div class="caphead"><span>當天負荷</span><span>預估 <b>'+minToHM(used)+'</b> ／ 可用 '+(avail>0?minToHM(avail):"未設定")+'</span></div><div class="capbar"><span style="width:'+pct+'%"></span></div>'+(over?'<div class="capwarn">'+overMsg+'</div>':(avail===0&&used>0?'<div class="capwarn">這天還沒設定可用時段，無法估算負荷。</div>':''))+'</div>';
 
     var total=revs.length, done=revs.filter(function(r){return r.done;}).length, allDone=total>0&&done===total;
 
@@ -645,6 +672,66 @@ function renderDays(){
   box.innerHTML=html;
   wireDays();
   updateProgress();
+  renderOverview();
+}
+
+/* ===== 主動防呆：負荷估算、錯開建議、全期總覽 ===== */
+function dayLoad(day){
+  var wd=dateOf(day).getDay();
+  var t=S.time[wd]||{on:false,wins:[]};
+  var avail=availMin(wd), rest=!t.on;
+  var ents=S.entries[day]||[];
+  var usedNew=ents.reduce(function(s,e){return s+((e.subject)?(+e.min||S.estNew):0);},0);
+  var revMin=0;
+  STAGES.forEach(function(st){
+    var src=day-st.off; if(src<1)return;
+    (S.entries[src]||[]).forEach(function(e){if(e.scope&&e.subject)revMin+=st.min;});
+  });
+  var used=usedNew+revMin;
+  return {wd:wd,avail:avail,rest:rest,used:used,over:(avail>0&&used>avail),
+          pct:avail>0?Math.round(used/avail*100):(used>0?100:0)};
+}
+function suggestLighterDay(day){
+  var N=numDays();
+  for(var off=1;off<=4;off++){
+    for(var s=-1;s<=1;s+=2){
+      var d=day+off*s; if(d<1||d>N)continue;
+      var L=dayLoad(d);
+      if(!L.rest&&L.avail>0&&!L.over&&(L.avail-L.used)>=S.estNew)return d;
+    }
+  }
+  return null;
+}
+function renderOverview(){
+  var el=document.getElementById("overview"); if(!el)return;
+  var N=numDays(), cells="", overDays=[];
+  for(var d=1;d<=N;d++){
+    var L=dayLoad(d), cls;
+    if(L.rest)cls="rest";
+    else if(L.avail===0)cls=(L.used>0?"none":"none");
+    else if(L.over){cls="over";overDays.push(d);}
+    else if(L.pct>=80)cls="warn";
+    else if(L.used>0)cls="ok";
+    else cls="empty";
+    var dd=dateOf(d);
+    var tip="Day "+d+"　"+(dd.getMonth()+1)+"/"+dd.getDate()+"　"+(L.rest?"休息日":("預估 "+minToHM(L.used)+(L.avail>0?" / 可用 "+minToHM(L.avail):" / 未設時段")));
+    cells+='<button class="hm '+cls+'" data-goday="'+d+'" title="'+esc(tip)+'">'+d+'</button>';
+  }
+  var head, alertCls="";
+  if(overDays.length){
+    alertCls=" alert";
+    head='<div class="ov-warn"><span>⚠ 有 <b>'+overDays.length+'</b> 天可能超出可用時段，點下方或這裡跳到該天調整：</span>'+
+      overDays.map(function(d){var dd=dateOf(d);return '<button class="ovchip" data-goday="'+d+'">Day '+d+'（'+(dd.getMonth()+1)+'/'+dd.getDate()+'）</button>';}).join("")+'</div>';
+  }else{
+    head='<div class="ov-ok">✓ 目前各天負荷都在可用時段內，沒有超量的日子。</div>';
+  }
+  el.innerHTML='<section class="panel ov'+alertCls+'"><h2><span class="dot"></span>全期負荷總覽<small>顏色＝當天預估時間÷可用時段；點格子可跳到該天</small></h2>'+
+    head+'<div class="hmwrap">'+cells+'</div>'+
+    '<div class="hmlegend"><span><i class="k ok"></i>充裕</span><span><i class="k warn"></i>接近上限</span><span><i class="k over"></i>超量</span><span><i class="k rest"></i>休息日</span><span><i class="k none"></i>未設時段</span></div></section>';
+  el.querySelectorAll("[data-goday]").forEach(function(b){b.addEventListener("click",function(){
+    var cards=document.querySelectorAll("#days .daycard"), c=cards[(+b.dataset.goday)-1];
+    if(c){c.scrollIntoView({behavior:"smooth",block:"center"});c.style.transition="box-shadow .3s";c.style.boxShadow="0 0 0 3px var(--accent)";setTimeout(function(){c.style.boxShadow="";},1400);}
+  });});
 }
 
 function wireDays(){
