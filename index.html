@@ -212,10 +212,12 @@
   .hm.ok{background:#A8E0BD;border-color:#5FBF87}
   .hm.warn{background:#FBD98A;border-color:#E7B23C}
   .hm.over{background:#F0A88E;border-color:#D9683A}
+  .hm.needtime{background:#D9C7F5;border-color:#9B7BE8;color:#20262f}
   .hm.rest{background:repeating-linear-gradient(45deg,#e2e6ee,#e2e6ee 3px,#f4f6fa 3px,#f4f6fa 6px);color:#8a93a6}
   .hmlegend{display:flex;flex-wrap:wrap;gap:14px;margin-top:11px;font-size:12px;color:var(--ink-soft)}
   .hmlegend i.k{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
   .hmlegend i.ok{background:#A8E0BD}.hmlegend i.warn{background:#FBD98A}.hmlegend i.over{background:#F0A88E}
+  .hmlegend i.needtime{background:#D9C7F5}
   .hmlegend i.rest{background:#d9dde6}.hmlegend i.none{background:transparent;border:1px dashed var(--line)}
 
   footer{margin-top:40px;border-top:1px solid var(--line);padding-top:22px;color:var(--ink-soft);font-size:13.5px}
@@ -292,9 +294,11 @@
       <div class="p-txt">複習完成度<br><b id="ptxt">0 / 0</b> 個複習項目</div>
     </div>
     <div class="tools">
+      <button class="btn mini" id="theme" title="切換主題（自動／淺色／深色）">主題·自動</button>
       <button class="btn mini" id="sample">載入範例</button>
       <button class="btn mini" id="clear">清空進度</button>
       <button class="btn mini" id="copy">複製成表格</button>
+      <button class="btn mini" id="ics">下載行事曆</button>
       <button class="btn mini solid" id="print">列印 / 存 PDF</button>
     </div>
   </div>
@@ -608,7 +612,8 @@ function scopeControl(day,e){
     return '<select '+attr+'><option value="">選章節</option>'+inner+'<option value="__custom__">自訂…</option></select>';
   }
   var back=groups?'<button class="usemenu" data-usemenu="'+day+'" data-id="'+e.id+'" title="改用章節選單">☰</button>':'';
-  return '<span class="scopecustom"><input type="text" '+attr+' value="'+esc(e.scope)+'" placeholder="範圍／章節（自訂）">'+back+'</span>';
+  var ph=(e.version==="南一")?"南一版尚無內建目錄，請自行輸入範圍":"範圍／章節（自訂）";
+  return '<span class="scopecustom"><input type="text" '+attr+' value="'+esc(e.scope)+'" placeholder="'+ph+'">'+back+'</span>';
 }
 function entryRow(day,e){
   var subs=S.subjects.map(function(s){return s.name;});
@@ -622,8 +627,28 @@ function entryRow(day,e){
     '</div>';
 }
 
+/* ===== 清理孤兒資料：移除空進度陣列與已無對應項目的複習勾選（不刪任何仍有內容的進度） ===== */
+function pruneOrphans(){
+  var N=numDays(), changed=false;
+  Object.keys(S.entries).forEach(function(k){
+    if(Array.isArray(S.entries[k])&&S.entries[k].length===0){delete S.entries[k];changed=true;}
+  });
+  Object.keys(S.done).forEach(function(dk){
+    var m=/^d_(\d+)_(.+)_(\d+)$/.exec(dk);
+    if(!m){delete S.done[dk];changed=true;return;}
+    var day=+m[1], id=m[2], n=+m[3];
+    var st=STAGES.filter(function(s){return s.n===n;})[0];
+    if(!st||day<1||day>N){delete S.done[dk];changed=true;return;}
+    var src=day-st.off;
+    var exists=(S.entries[src]||[]).some(function(e){return e.id===id&&e.scope&&e.subject;});
+    if(!exists){delete S.done[dk];changed=true;}
+  });
+  if(changed)save();
+}
+
 /* ===== day cards ===== */
 function renderDays(){
+  pruneOrphans();
   var box=document.getElementById("days"), N=numDays(), html="";
   for(var day=1;day<=N;day++){
     var d=dateOf(day), wd=d.getDay();
@@ -713,11 +738,11 @@ function suggestLighterDay(day){
 }
 function renderOverview(){
   var el=document.getElementById("overview"); if(!el)return;
-  var N=numDays(), cells="", overDays=[];
+  var N=numDays(), cells="", overDays=[], needDays=[];
   for(var d=1;d<=N;d++){
     var L=dayLoad(d), cls;
     if(L.rest)cls="rest";
-    else if(L.avail===0)cls=(L.used>0?"none":"none");
+    else if(L.avail===0){cls=(L.used>0?"needtime":"none");if(L.used>0)needDays.push(d);}
     else if(L.over){cls="over";overDays.push(d);}
     else if(L.pct>=80)cls="warn";
     else if(L.used>0)cls="ok";
@@ -727,16 +752,19 @@ function renderOverview(){
     cells+='<button class="hm '+cls+'" data-goday="'+d+'" title="'+esc(tip)+'">'+d+'</button>';
   }
   var head, alertCls="";
-  if(overDays.length){
+  var chip=function(d){var dd=dateOf(d);return '<button class="ovchip" data-goday="'+d+'">Day '+d+'（'+(dd.getMonth()+1)+'/'+dd.getDate()+'）</button>';};
+  if(overDays.length||needDays.length){
     alertCls=" alert";
-    head='<div class="ov-warn"><span>⚠ 有 <b>'+overDays.length+'</b> 天可能超出可用時段，點下方或這裡跳到該天調整：</span>'+
-      overDays.map(function(d){var dd=dateOf(d);return '<button class="ovchip" data-goday="'+d+'">Day '+d+'（'+(dd.getMonth()+1)+'/'+dd.getDate()+'）</button>';}).join("")+'</div>';
+    var blk="";
+    if(overDays.length)blk+='<div class="ov-warn"><span>⚠ 有 <b>'+overDays.length+'</b> 天可能超出可用時段，點下方或這裡跳到該天調整：</span>'+overDays.map(chip).join("")+'</div>';
+    if(needDays.length)blk+='<div class="ov-warn"><span>⏱ 有 <b>'+needDays.length+'</b> 天排了進度卻未設可用時段，無法估算負荷：</span>'+needDays.map(chip).join("")+'</div>';
+    head=blk;
   }else{
     head='<div class="ov-ok">✓ 目前各天負荷都在可用時段內，沒有超量的日子。</div>';
   }
   el.innerHTML='<section class="panel ov'+alertCls+'"><h2><span class="dot"></span>全期負荷總覽<small>顏色＝當天預估時間÷可用時段；點格子可跳到該天</small></h2>'+
     head+'<div class="hmwrap">'+cells+'</div>'+
-    '<div class="hmlegend"><span><i class="k ok"></i>充裕</span><span><i class="k warn"></i>接近上限</span><span><i class="k over"></i>超量</span><span><i class="k rest"></i>休息日</span><span><i class="k none"></i>未設時段</span></div></section>';
+    '<div class="hmlegend"><span><i class="k ok"></i>充裕</span><span><i class="k warn"></i>接近上限</span><span><i class="k over"></i>超量</span><span><i class="k needtime"></i>有進度未設時段</span><span><i class="k rest"></i>休息日</span><span><i class="k none"></i>未設時段</span></div></section>';
   el.querySelectorAll("[data-goday]").forEach(function(b){b.addEventListener("click",function(){
     var cards=document.querySelectorAll("#days .daycard"), c=cards[(+b.dataset.goday)-1];
     if(c){c.scrollIntoView({behavior:"smooth",block:"center"});c.style.transition="box-shadow .3s";c.style.boxShadow="0 0 0 3px var(--accent)";setTimeout(function(){c.style.boxShadow="";},1400);}
@@ -856,13 +884,61 @@ function printPlan(){
   w.document.open();w.document.write(doc);w.document.close();
 }
 document.getElementById("print").addEventListener("click",printPlan);
+
+/* ===== 手動主題切換：自動（跟隨系統）→ 淺色 → 深色 → 自動 ===== */
+function applyTheme(){
+  var t=S.theme, root=document.documentElement, b=document.getElementById("theme");
+  if(t==="light"||t==="dark")root.setAttribute("data-theme",t);else root.removeAttribute("data-theme");
+  if(b)b.textContent="主題·"+(t==="light"?"淺色":(t==="dark"?"深色":"自動"));
+}
+document.getElementById("theme").addEventListener("click",function(){
+  S.theme=(S.theme==="light")?"dark":((S.theme==="dark")?null:"light");
+  save();applyTheme();
+});
+
+/* ===== 下載 .ics 行事曆：在新視窗觸發下載，繞過 Google Sites iframe sandbox ===== */
+function icsDate(d){return ""+d.getFullYear()+("0"+(d.getMonth()+1)).slice(-2)+("0"+d.getDate()).slice(-2);}
+function icsEsc(s){return String(s).replace(/([\\;,])/g,"\\$1").replace(/\r?\n/g,"\\n");}
+function buildICS(){
+  var rows=planRows(), L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//review-rhythm//1-4-7-14//ZH-TW","CALSCALE:GREGORIAN","METHOD:PUBLISH"];
+  var stamp=icsDate(new Date())+"T000000Z";
+  rows.forEach(function(r){
+    if(!r.news.length&&!r.revs.length)return;
+    var d=dateOf(r.day), dEnd=new Date(d); dEnd.setDate(dEnd.getDate()+1);
+    var desc=[];
+    if(r.news.length)desc.push("新進度："+r.news.join(" / "));
+    if(r.revs.length)desc.push("複習："+r.revs.join(" / "));
+    L.push("BEGIN:VEVENT","UID:rr-"+r.day+"-"+icsDate(d)+"@review-rhythm","DTSTAMP:"+stamp,
+      "DTSTART;VALUE=DATE:"+icsDate(d),"DTEND;VALUE=DATE:"+icsDate(dEnd),
+      "SUMMARY:"+icsEsc("複習節奏 Day "+r.day+"（新 "+r.news.length+"・複習 "+r.revs.length+"）"),
+      "DESCRIPTION:"+icsEsc(desc.join("\n")),"END:VEVENT");
+  });
+  L.push("END:VCALENDAR");
+  return L.join("\r\n");
+}
+document.getElementById("ics").addEventListener("click",function(){
+  var ics=buildICS();
+  if(!/BEGIN:VEVENT/.test(ics)){toast("目前沒有可匯出的進度，先排一些新進度再試");return;}
+  var w=window.open("","_blank");
+  if(!w){toast("請允許此網站開啟彈出視窗，才能下載行事曆檔");return;}
+  var doc='<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><title>下載複習行事曆</title>'+
+    '<style>body{font-family:system-ui,-apple-system,sans-serif;margin:40px;color:#1b2333;line-height:1.7}'+
+    'a.dl{display:inline-block;margin-top:8px;padding:11px 20px;background:#2f52d9;color:#fff;border-radius:9px;text-decoration:none;font-weight:700}</style></head>'+
+    '<body><h2>複習節奏行事曆</h2><p>檔案已開始下載（<b>review-plan.ics</b>）。若瀏覽器未自動下載，請按下方按鈕，再匯入 Google 日曆／Apple 行事曆。</p>'+
+    '<p><a id="dl" class="dl">下載 review-plan.ics</a></p>'+
+    '<scr'+'ipt>var data='+JSON.stringify(ics)+';var blob=new Blob([data],{type:"text/calendar;charset=utf-8"});var url=URL.createObjectURL(blob);var a=document.getElementById("dl");a.href=url;a.download="review-plan.ics";setTimeout(function(){a.click();},250);</scr'+'ipt></body></html>';
+  w.document.open();w.document.write(doc);w.document.close();
+});
+
 document.getElementById("clear").addEventListener("click",function(){
   if(!confirm("確定要清空所有新進度與複習勾選嗎？（科目、時段與設定會保留）"))return;
   S.entries={};S.done={};save();renderDays();toast("已清空進度");
 });
 document.getElementById("sample").addEventListener("click",function(){
   var subs=S.subjects.map(function(s){return s.name;});
-  var s0=subs[0]||"自然", s1=subs[1]||"地理", s2=subs[2]||"歷史";
+  // 依科目「名稱」對應範例章節；找不到才退回位置，避免重排科目後範例錯置
+  function pick(name,idx){return subs.indexOf(name)>=0?name:(subs[idx]||name);}
+  var s0=pick("自然",0), s1=pick("地理",1), s2=pick("歷史",2);
   var seed={
     1:[{grade:"二上",subject:s0,version:"康軒",scope:"1-1 長度與體積的測量",min:40},{grade:"二上",subject:s1,version:"康軒",scope:"第1課 中國的自然環境",min:35}],
     2:[{grade:"二上",subject:s0,version:"康軒",scope:"1-2 質量與密度的測量",min:40},{grade:"二上",subject:s2,version:"康軒",scope:"第1課 商周至隋唐的國家與社會",min:30}],
@@ -905,6 +981,7 @@ var toastEl=document.getElementById("toast"),toastT;
 function toast(m){toastEl.textContent=m;toastEl.classList.add("show");clearTimeout(toastT);toastT=setTimeout(function(){toastEl.classList.remove("show");},2800);}
 
 /* ===== init ===== */
+applyTheme();
 renderChips();
 renderTT();
 renderDays();
