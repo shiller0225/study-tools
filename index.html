@@ -257,8 +257,11 @@
   <section class="panel">
     <h2><span class="dot"></span>計畫設定</h2>
     <div class="grid-set">
-      <label class="fld">目標名稱
-        <input type="text" id="goal" placeholder="例如：期中考衝刺、學測生物">
+      <label class="fld">目標類型
+        <select id="goaltype">
+          <option value="段考複習">段考複習（小範圍：節／課）</option>
+          <option value="模擬考複習">模擬考複習（大範圍：章／主題）</option>
+        </select>
       </label>
       <label class="fld">開始日期
         <input type="date" id="start">
@@ -493,7 +496,7 @@ var S=load()||defaultState();
 function defaultState(){
   var t=todayISO();
   return {
-    goal:"", start:t, end:addDaysISO(t,13),
+    goalType:"段考複習", start:t, end:addDaysISO(t,13),
     estNew:40,
     subjects:[{id:uid(),name:"自然"},{id:uid(),name:"地理"},{id:uid(),name:"歷史"},{id:uid(),name:"公民"},{id:uid(),name:"數學"},{id:uid(),name:"英文"}],
     time:defaultTime(),
@@ -537,9 +540,10 @@ function availMin(weekday){var t=S.time[weekday];if(!t||!t.on)return 0;return t.
 })();
 
 /* ===== setup controls ===== */
-var goalEl=document.getElementById("goal"),startEl=document.getElementById("start"),endEl=document.getElementById("end"),estEl=document.getElementById("estnew");
-goalEl.value=S.goal; startEl.value=S.start; endEl.value=S.end; estEl.value=S.estNew;
-goalEl.addEventListener("input",function(){S.goal=goalEl.value;save();});
+if(!S.goalType)S.goalType="段考複習";
+var goalEl=document.getElementById("goaltype"),startEl=document.getElementById("start"),endEl=document.getElementById("end"),estEl=document.getElementById("estnew");
+goalEl.value=S.goalType; startEl.value=S.start; endEl.value=S.end; estEl.value=S.estNew;
+goalEl.addEventListener("change",function(){S.goalType=goalEl.value;save();renderDays();});
 startEl.addEventListener("change",function(){S.start=startEl.value||todayISO();if(S.end<S.start)S.end=addDaysISO(S.start,13),endEl.value=S.end;save();renderDays();});
 endEl.addEventListener("change",function(){S.end=endEl.value||S.start;save();renderDays();});
 estEl.addEventListener("change",function(){var v=+estEl.value;S.estNew=(v&&v>0)?v:40;estEl.value=S.estNew;save();renderDays();});
@@ -593,6 +597,11 @@ function scopeControl(day,e){
   var groups=scopeGroups(e.subject,e.version,e.grade);
   var attr='data-f="scope" data-day="'+day+'" data-id="'+e.id+'"';
   if(groups&&!e._custom){
+    // 自然 + 模擬考複習：改列「章／主題」大範圍（一項＝一整章）
+    if(e.subject==="自然"&&S.goalType==="模擬考複習"){
+      var big=groups.map(function(g){return '<option'+(g.u===e.scope?' selected':'')+'>'+esc(g.u)+'</option>';}).join("");
+      return '<select '+attr+'><option value="">選整章／主題</option>'+big+'<option value="__custom__">自訂…</option></select>';
+    }
     var inner=groups.map(function(g){
       return '<optgroup label="'+esc(g.u)+'">'+g.s.map(function(x){return '<option'+(x===e.scope?' selected':'')+'>'+esc(x)+'</option>';}).join("")+'</optgroup>';
     }).join("");
@@ -816,7 +825,7 @@ function planRows(){
 }
 function printPlan(){
   var rows=planRows();
-  var title=(S.goal&&S.goal.trim())?S.goal.trim():"複習計畫";
+  var title=S.goalType||"複習計畫";
   var sd=dateOf(1), ed=dateOf(numDays());
   var period=(sd.getMonth()+1)+"/"+sd.getDate()+" ～ "+(ed.getMonth()+1)+"/"+ed.getDate();
   var body=rows.map(function(r){
@@ -861,6 +870,7 @@ document.getElementById("sample").addEventListener("click",function(){
     4:[{grade:"二上",subject:s1,version:"康軒",scope:"第2課 中國的人口成長與文化遷移",min:35}],
     5:[{grade:"二上",subject:s0,version:"康軒",scope:"2-2 水溶液",min:45},{grade:"二上",subject:s2,version:"康軒",scope:"第2課 商周至隋唐的民族與文化",min:30}]
   };
+  S.goalType="段考複習"; var gt=document.getElementById("goaltype"); if(gt)gt.value=S.goalType; // 範例為節層級，配合段考小範圍
   Object.keys(seed).forEach(function(day){
     S.entries[day]=seed[day].map(function(o){return {id:uid(),grade:o.grade,subject:o.subject,version:o.version,scope:o.scope,min:o.min};});
   });
