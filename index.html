@@ -9,27 +9,29 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap">
 <style>
   :root{
-    --paper:#F4F6FA; --card:#FFFFFF; --ink:#1B2333; --ink-soft:#4A5468; --ink-faint:#8A93A6;
-    --line:#DFE4EE; --line-soft:#EAEDF4;
-    --accent:#2F52D9; --accent-soft:#E5EAFB; --accent-ink:#1E3AAE;
-    --rail:#0F1830; --rail-ink:#EAECF5;
+    --paper:#ECEFF6; --card:#FFFFFF; --ink:#141C31; --ink-soft:#48526B; --ink-faint:#828CA1;
+    --line:#DBE1EE; --line-soft:#E8ECF5;
+    --accent:#27408B; --accent-bright:#3556B8; --accent-soft:#E6EAF6; --accent-ink:#22366F;
+    --gold:#C1912B; --gold-bright:#DDAC3E; --gold-soft:#F6EDD4; --gold-ink:#7E5C13;
+    --rail:#111A31; --rail-ink:#EAECF5;
     --hl-yellow:#FCE38A; --hl-yellow-b:#E9B308;
     --hl-pink:#F7C4DE;   --hl-pink-b:#D9418A;
     --hl-solve:#A8E6D2;  --hl-solve-b:#0F9E7E;
     --hl-deep:#C6B9F5;   --hl-deep-b:#6B44D4;
     --good:#0F9E7E; --warn:#D9683A; --warn-soft:#FBE7DD;
-    --shadow:0 1px 2px rgba(20,30,60,.05),0 6px 20px rgba(20,30,60,.06);
-    --shadow-lift:0 2px 6px rgba(20,30,60,.08),0 14px 40px rgba(20,30,60,.10);
+    --shadow:0 1px 2px rgba(18,26,49,.05),0 6px 20px rgba(18,26,49,.07);
+    --shadow-lift:0 2px 6px rgba(18,26,49,.09),0 16px 44px rgba(18,26,49,.12);
     --r:14px;
     --serif:"Noto Serif TC",serif; --fra:"Fraunces","Noto Serif TC",serif;
     --sans:"Microsoft JhengHei","微軟正黑體","Noto Sans TC","PingFang TC",system-ui,-apple-system,"Segoe UI",sans-serif;
   }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
-      --paper:#0E121C; --card:#161C2A; --ink:#EAEDF5; --ink-soft:#AEB6C7; --ink-faint:#727C90;
-      --line:#28303F; --line-soft:#1E2532;
-      --accent:#7D95F2; --accent-soft:#20294A; --accent-ink:#AEBEF9;
-      --rail:#05070D; --rail-ink:#EAECF5;
+      --paper:#0C1020; --card:#161C2E; --ink:#EAEDF5; --ink-soft:#AEB6C7; --ink-faint:#727C90;
+      --line:#28303F; --line-soft:#1E2635;
+      --accent:#8AA0F2; --accent-bright:#A6B7F7; --accent-soft:#1E2748; --accent-ink:#B7C4F9;
+      --gold:#E3BC5A; --gold-bright:#F0CE77; --gold-soft:#2B2413; --gold-ink:#EBC876;
+      --rail:#05070E; --rail-ink:#EAECF5;
       --hl-yellow:#B9930F; --hl-yellow-b:#F0CB3B;
       --hl-pink:#A83672;   --hl-pink-b:#F390C0;
       --hl-solve:#12735C;  --hl-solve-b:#63D6B5;
@@ -40,10 +42,11 @@
     }
   }
   :root[data-theme="dark"]{
-    --paper:#0E121C; --card:#161C2A; --ink:#EAEDF5; --ink-soft:#AEB6C7; --ink-faint:#727C90;
-    --line:#28303F; --line-soft:#1E2532;
-    --accent:#7D95F2; --accent-soft:#20294A; --accent-ink:#AEBEF9;
-    --rail:#05070D; --rail-ink:#EAECF5;
+    --paper:#0C1020; --card:#161C2E; --ink:#EAEDF5; --ink-soft:#AEB6C7; --ink-faint:#727C90;
+    --line:#28303F; --line-soft:#1E2635;
+    --accent:#8AA0F2; --accent-bright:#A6B7F7; --accent-soft:#1E2748; --accent-ink:#B7C4F9;
+    --gold:#E3BC5A; --gold-bright:#F0CE77; --gold-soft:#2B2413; --gold-ink:#EBC876;
+    --rail:#05070E; --rail-ink:#EAECF5;
     --hl-yellow:#B9930F; --hl-yellow-b:#F0CB3B;
     --hl-pink:#A83672;   --hl-pink-b:#F390C0;
     --hl-solve:#12735C;  --hl-solve-b:#63D6B5;
@@ -62,8 +65,32 @@
   .eyebrow{font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--accent-ink);font-weight:700;margin:0 0 8px}
   h1.title{font-family:var(--fra);font-weight:900;font-size:clamp(36px,6.4vw,60px);line-height:.98;letter-spacing:-.01em;margin:0;text-wrap:balance}
   h1.title .num{color:var(--accent);font-variant-numeric:tabular-nums}
-  .lede{font-size:clamp(15px,1.6vw,17px);color:var(--ink-soft);max-width:62ch;margin:14px 0 0}
+  .lede{font-size:clamp(15px,1.6vw,17px);color:var(--ink-soft);max-width:52ch;margin:14px 0 0}
   .lede b{color:var(--ink);font-weight:700}
+
+  /* ===== hero ===== */
+  header.hero{position:relative;margin-bottom:26px;border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow-lift);padding:clamp(22px,3vw,36px);overflow:hidden;
+    background:radial-gradient(130% 95% at 92% -12%, color-mix(in srgb,var(--accent) 13%,transparent), transparent 58%), linear-gradient(180deg, color-mix(in srgb,var(--accent) 7%,var(--card)) 0%, var(--card) 66%);}
+  header.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:linear-gradient(90deg,var(--accent) 0%,var(--gold) 100%)}
+  .hero-grid{display:grid;grid-template-columns:1.12fr .88fr;gap:clamp(18px,3vw,38px);align-items:center}
+  @media(max-width:760px){.hero-grid{grid-template-columns:1fr}}
+  .hero-badge{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;letter-spacing:.14em;font-weight:800;color:var(--gold-ink);background:var(--gold-soft);border:1px solid color-mix(in srgb,var(--gold) 45%,transparent);padding:5px 13px;border-radius:999px;margin-bottom:15px}
+  .hero-badge .d{width:7px;height:7px;border-radius:50%;background:var(--gold)}
+  .motto{font-family:var(--serif);font-weight:700;font-size:clamp(15px,1.7vw,18px);color:var(--accent-ink);margin:14px 0 0;line-height:1.55}
+  figure.curve{margin:0;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:14px 16px 11px}
+  figure.curve svg{display:block;width:100%;height:auto}
+  figure.curve figcaption{font-size:11.5px;color:var(--ink-soft);margin-top:8px;text-align:center;line-height:1.6}
+  figure.curve figcaption b{color:var(--accent-ink)}figure.curve figcaption i{color:var(--gold-ink);font-style:normal;font-weight:700}
+  figure.curve .ax{stroke:var(--line);stroke-width:1.4;fill:none}
+  figure.curve .fcurve{fill:none;stroke:var(--ink-faint);stroke-width:2.4;opacity:.65;stroke-dasharray:2 4;stroke-linecap:round}
+  figure.curve .scurve{fill:none;stroke:var(--accent);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+  figure.curve .cdot{fill:var(--gold);stroke:var(--card);stroke-width:2}
+  figure.curve .lbl{font-family:var(--sans);font-size:9.5px;fill:var(--ink-faint)}
+  figure.curve .lbl-s{fill:var(--accent-ink);font-weight:700}
+  figure.curve .lbl-ax{font-size:9px;opacity:.85}
+  @keyframes cpulse{0%,100%{opacity:1}50%{opacity:.45}}
+  .cdot{animation:cpulse 2.8s ease-in-out infinite}
+  @media (prefers-reduced-motion:reduce){.cdot{animation:none}}
 
   details.method{margin-top:20px;border:1px solid var(--line);border-radius:var(--r);background:var(--card);box-shadow:var(--shadow);overflow:hidden}
   details.method>summary{cursor:pointer;list-style:none;padding:14px 18px;display:flex;align-items:center;gap:10px;font-family:var(--serif);font-weight:700;font-size:15px;color:var(--ink)}
@@ -129,7 +156,7 @@
   .toolbar{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(8px);margin:22px -8px 0;padding:12px 8px;border-radius:14px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;border:1px solid var(--line-soft)}
   .progress-blk{display:flex;align-items:center;gap:12px;flex:1;min-width:220px}
   .ring-wrap{position:relative;display:grid;place-items:center}
-  .ring{--p:0;width:44px;height:44px;border-radius:50%;flex:none;background:conic-gradient(var(--good) calc(var(--p)*1%),var(--line) 0);display:grid;place-items:center}
+  .ring{--p:0;width:44px;height:44px;border-radius:50%;flex:none;background:conic-gradient(var(--gold) calc(var(--p)*1%),var(--line) 0);display:grid;place-items:center;transition:background .4s}
   .ring::after{content:"";width:34px;height:34px;border-radius:50%;background:var(--card)}
   .ring-wrap b{position:absolute;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink)}
   .p-txt{font-size:13.5px;color:var(--ink-soft)}
@@ -139,7 +166,7 @@
   .days{margin-top:22px;display:flex;flex-direction:column;gap:14px}
   .daycard{display:grid;grid-template-columns:104px 1fr;background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;transition:box-shadow .18s}
   .daycard:hover{box-shadow:var(--shadow-lift)}
-  .daycard.alldone{border-color:color-mix(in srgb,var(--good) 45%,var(--line))}
+  .daycard.alldone{border-color:color-mix(in srgb,var(--gold) 60%,var(--line));box-shadow:0 0 0 1px color-mix(in srgb,var(--gold) 30%,transparent),var(--shadow)}
   .daycard.today{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 55%,transparent),var(--shadow)}
   .daycard.today .rail{background:var(--accent)}
   .rail .todaybadge{background:#fff;color:var(--accent-ink);font-size:10px;font-weight:800;letter-spacing:.1em;border-radius:999px;padding:1px 8px;margin-bottom:4px}
@@ -150,7 +177,7 @@
   .rail .dt{font-size:12px;opacity:.82;margin-top:6px;font-variant-numeric:tabular-nums}
   .rail .wk{font-size:11px;opacity:.6}
   .rail .avail{margin-top:8px;font-size:11px;opacity:.85;font-variant-numeric:tabular-nums;border-top:1px solid rgba(255,255,255,.15);padding-top:7px;width:100%}
-  .rail .tick{margin-top:8px;font-size:18px;color:var(--good);height:20px}
+  .rail .tick{margin-top:8px;font-size:18px;color:var(--gold-bright);height:20px}
   .body{padding:15px 18px;min-width:0}
   .sec-h{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);font-weight:700;margin:0 0 10px;display:flex;align-items:center;gap:7px}
   .sec-h .pen{font-size:11px;letter-spacing:0;text-transform:none;color:var(--accent-ink);font-weight:700;background:var(--accent-soft);padding:2px 8px;border-radius:999px}
@@ -247,9 +274,33 @@
 <body>
 <div class="wrap">
   <header class="hero">
-    <p class="eyebrow">1 · 4 · 7 · 14 間隔複習法</p>
-    <h1 class="title">把「忘記」<br>擋在遺忘曲線<span class="num">之前</span></h1>
-    <p class="lede">選好起訖日期與每週能讀書的時段，每天挑一點新進度（<b>年級 → 科目 → 版本 → 範圍</b>），系統就依 <b>1／4／7／14 讀書法</b>自動幫你排出「今天該回頭複習哪幾天」，還會估算當天塞不塞得下。</p>
+    <div class="hero-grid">
+      <div class="hero-main">
+        <span class="hero-badge"><span class="d"></span>1 · 4 · 7 · 14 間隔複習法</span>
+        <h1 class="title">把「忘記」<br>擋在遺忘曲線<span class="num">之前</span></h1>
+        <p class="lede">選好起訖日期與每週能讀書的時段，每天挑一點新進度（<b>年級 → 科目 → 版本 → 範圍</b>），系統就依 <b>1／4／7／14 讀書法</b>自動排出「今天該回頭複習哪幾天」，還會估算當天塞不塞得下。</p>
+        <p class="motto">每天多記住一點，考前就少慌張一點——讓複習變成習慣，實力自己會長出來。</p>
+      </div>
+      <div class="hero-art">
+        <figure class="curve">
+          <svg viewBox="0 0 340 190" role="img" aria-label="有複習與沒複習的記憶保留比較圖">
+            <path class="ax" d="M40 150 H320"/>
+            <path class="ax" d="M40 150 V24"/>
+            <path class="fcurve" d="M46 40 C90 96 150 124 312 140"/>
+            <path class="scurve" d="M46 40 L66 66 L66 36 L107 62 L107 34 L169 60 L169 33 L312 52 L312 32"/>
+            <circle class="cdot" cx="66" cy="36" r="5"/>
+            <circle class="cdot" cx="107" cy="34" r="5"/>
+            <circle class="cdot" cx="169" cy="33" r="5"/>
+            <circle class="cdot" cx="312" cy="32" r="5"/>
+            <text class="lbl lbl-s" x="196" y="30">照節奏複習</text>
+            <text class="lbl lbl-f" x="214" y="132">放任遺忘</text>
+            <text class="lbl lbl-ax" x="300" y="164">天數→</text>
+            <text class="lbl lbl-ax" transform="rotate(-90 20 92)" x="20" y="92">記憶保留↑</text>
+          </svg>
+          <figcaption>灰線＝放任遺忘；<b>靛線＝照 1／4／7／14 複習</b>，記憶維持在高點。<br><i>● 金點</i>＝該回頭複習的時機。</figcaption>
+        </figure>
+      </div>
+    </div>
 
     <details class="method">
       <summary>這個方法怎麼運作？ <span class="chev">›</span></summary>
