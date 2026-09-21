@@ -267,6 +267,33 @@
     body{background:#fff}
     .daycard{break-inside:avoid;box-shadow:none;border-color:#ccc}
   }
+
+  /* ===== 忙碌模式 ===== */
+  .day-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:-2px 0 12px}
+  .modetog{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:800;color:var(--accent-ink);background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);border-radius:999px;padding:5px 12px;cursor:pointer;font-family:var(--sans);white-space:nowrap}
+  .modetog .tog-sub{font-weight:600;font-size:11px;opacity:.72}
+  .modetog.on{color:var(--gold-ink);background:var(--gold-soft);border-color:color-mix(in srgb,var(--gold) 55%,transparent)}
+  .modetog:hover{filter:brightness(.97)}
+  .busy-note{font-size:12px;font-weight:600;color:var(--gold-ink);line-height:1.5}
+  .daycard.busy{background:color-mix(in srgb,var(--gold-soft) 32%,var(--card))}
+  .busybadge{display:inline-block;font-size:10.5px;font-weight:800;color:#3a2c07;background:var(--gold-bright);border-radius:999px;padding:1px 8px;margin-bottom:6px}
+  .entry.deferable{border-color:color-mix(in srgb,var(--gold) 40%,var(--line-soft))}
+  .defer-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:-3px 0 9px;padding-left:2px}
+  .tag-defer{font-size:11px;font-weight:800;color:var(--gold-ink);background:var(--gold-soft);border:1px solid color-mix(in srgb,var(--gold) 45%,transparent);border-radius:999px;padding:2px 9px}
+  .defer-tip{font-size:11.5px;color:var(--ink-soft)}
+  .defer{font-size:12px;font-weight:700;color:var(--gold-ink);background:var(--card);border:1px solid color-mix(in srgb,var(--gold) 50%,transparent);border-radius:999px;padding:3px 11px;cursor:pointer;font-family:var(--sans)}
+  .defer:hover{background:var(--gold-soft)}
+  .qbadge{display:inline-block;margin-left:8px;font-size:10.5px;font-weight:800;color:var(--gold-ink);background:var(--gold-soft);border:1px solid color-mix(in srgb,var(--gold) 40%,transparent);border-radius:999px;padding:1px 8px;vertical-align:middle}
+
+  /* ===== 固定忙碌日設定 ===== */
+  .busywk{margin-top:16px}
+  .busywk-row{display:flex;flex-wrap:wrap;gap:8px}
+  .bwk{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:700;color:var(--ink-soft);background:var(--paper);border:1px solid var(--line-soft);border-radius:10px;padding:7px 12px;cursor:pointer;user-select:none}
+  .bwk input{accent-color:var(--gold)}
+  .bwk.on{color:var(--gold-ink);background:var(--gold-soft);border-color:color-mix(in srgb,var(--gold) 50%,transparent)}
+
+  /* 熱區圖：忙碌日底線標記 */
+  .hm.busy{box-shadow:inset 0 -3px 0 var(--gold-bright)}
   @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
 
@@ -343,6 +370,11 @@
     <div class="tt">
       <div class="tt-cap">每週可利用的複習時段（每週固定循環，套用到整段期間；用來估算每天塞不塞得下）</div>
       <div class="tt-grid" id="ttgrid"></div>
+    </div>
+
+    <div class="busywk">
+      <div class="tt-cap">固定忙碌日（例如補習日）：勾選的星期會自動套用「忙碌模式」——複習改「快速回想」、新進度可一鍵延後，優先保睡眠。個別日期仍可在下方卡片手動改回正常。</div>
+      <div class="busywk-row" id="busywk"></div>
     </div>
   </section>
 
@@ -570,6 +602,9 @@ var TOC={"自然":{
 
 /* ===== state ===== */
 var S=load()||defaultState();
+/* 舊資料相容：補上忙碌模式欄位 */
+if(!S.busyWeekdays)S.busyWeekdays=[];
+if(!S.dayMode)S.dayMode={};
 function defaultState(){
   var t=todayISO();
   return {
@@ -577,6 +612,7 @@ function defaultState(){
     estNew:40,
     subjects:[{id:uid(),name:"國文"},{id:uid(),name:"自然"},{id:uid(),name:"地理"},{id:uid(),name:"歷史"},{id:uid(),name:"公民"},{id:uid(),name:"數學"},{id:uid(),name:"英文"}],
     time:defaultTime(),
+    busyWeekdays:[], dayMode:{},
     entries:{}, done:{}
   };
 }
@@ -606,6 +642,22 @@ function numDays(){
 function dateOf(day){var d=new Date(S.start+"T00:00:00");if(isNaN(d))d=new Date();d.setDate(d.getDate()+(day-1));return d;}
 function todayIdx(){var s=new Date(S.start+"T00:00:00");if(isNaN(s))return 0;var t=new Date();t.setHours(0,0,0,0);var d=Math.floor((t-s)/86400000)+1;return (d>=1&&d<=numDays())?d:0;}
 function minToHM(m){var h=Math.floor(m/60),mm=m%60;if(!h)return mm+"分";return h+"h"+(mm?(" "+mm+"分"):"");}
+/* ===== 忙碌模式：某天是否為忙碌日（逐日覆蓋 > 每週固定） ===== */
+function dayIsBusy(day){
+  var m=S.dayMode&&S.dayMode[day];
+  if(m==="busy")return true;
+  if(m==="normal")return false;
+  var wd=dateOf(day).getDay();
+  return (S.busyWeekdays||[]).indexOf(wd)>=0;
+}
+/* 忙碌日的複習改「快速回想版」：預估時間對半、至少 5 分 */
+function stMin(st,day){return dayIsBusy(day)?Math.max(5,Math.round(st.min/2)):st.min;}
+/* 切換某天的正常／忙碌；與每週固定規則一致時清掉覆蓋（維持「自動」） */
+function toggleDayMode(day){
+  var want=dayIsBusy(day)?"normal":"busy";
+  var wd=dateOf(day).getDay(), def=(S.busyWeekdays||[]).indexOf(wd)>=0;
+  if((want==="busy")===def){delete S.dayMode[day];}else{S.dayMode[day]=want;}
+}
 function winMin(w){var a=(w.s||"").split(":"),b=(w.e||"").split(":");if(a.length<2||b.length<2)return 0;var m=(+b[0]*60+ +b[1])-(+a[0]*60+ +a[1]);return m>0?m:0;}
 function availMin(weekday){var t=S.time[weekday];if(!t||!t.on)return 0;return t.wins.reduce(function(s,w){return s+winMin(w);},0);}
 
@@ -639,6 +691,20 @@ function renderChips(){
   function doAdd(){var v=inp.value.trim();if(!v)return;S.subjects.push({id:uid(),name:v});save();renderChips();renderDays();var ni=document.getElementById("newsubj");if(ni)ni.focus();}
   add.addEventListener("click",doAdd);
   inp.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();doAdd();}});
+}
+
+/* ===== 固定忙碌日（每週） ===== */
+function renderBusyWk(){
+  var g=document.getElementById("busywk"); if(!g)return;
+  g.innerHTML=[1,2,3,4,5,6,0].map(function(wd){
+    var on=(S.busyWeekdays||[]).indexOf(wd)>=0;
+    return '<label class="bwk'+(on?' on':'')+'"><input type="checkbox" data-bwk="'+wd+'"'+(on?' checked':'')+'>週'+WK[wd]+'</label>';
+  }).join("");
+  g.querySelectorAll("input[data-bwk]").forEach(function(cb){cb.addEventListener("change",function(){
+    var wd=+cb.dataset.bwk, arr=S.busyWeekdays||(S.busyWeekdays=[]), i=arr.indexOf(wd);
+    if(cb.checked){if(i<0)arr.push(wd);}else{if(i>=0)arr.splice(i,1);}
+    save();renderBusyWk();renderDays();
+  });});
 }
 
 /* ===== weekly time template ===== */
@@ -688,13 +754,13 @@ function scopeControl(day,e){
   var back=groups?'<button class="usemenu" data-usemenu="'+day+'" data-id="'+e.id+'" title="改用章節選單">☰</button>':'';
   return '<span class="scopecustom"><input type="text" '+attr+' value="'+esc(e.scope)+'" placeholder="範圍／章節（自訂）">'+back+'</span>';
 }
-function entryRow(day,e){
+function entryRow(day,e,busy){
   var subs=S.subjects.map(function(s){return s.name;});
   var nkey="n_"+day+"_"+e.id, ndone=!!S.done[nkey];
   var chk=e.subject
     ? '<input type="checkbox" class="edone" data-nkey="'+nkey+'"'+(ndone?' checked':'')+' title="標記此新進度已完成">'
     : '<span class="edone-x"></span>';
-  return '<div class="entry'+(e.subject&&ndone?' edone-on':'')+'">'+
+  var row='<div class="entry'+(e.subject&&ndone?' edone-on':'')+(busy&&e.subject?' deferable':'')+'">'+
     chk+
     selHTML(GRADES,e.grade,"年級",'data-f="grade" data-day="'+day+'" data-id="'+e.id+'"')+
     selHTML(subs,e.subject,"科目",'data-f="subject" data-day="'+day+'" data-id="'+e.id+'"')+
@@ -703,6 +769,12 @@ function entryRow(day,e){
     '<span class="mins"><input type="number" min="5" max="240" step="5" data-f="min" data-day="'+day+'" data-id="'+e.id+'" value="'+(e.min||"")+'" placeholder="'+S.estNew+'"><span>分</span></span>'+
     '<button class="rm" data-rment="'+day+'" data-id="'+e.id+'" title="移除">×</button>'+
     '</div>';
+  if(busy&&e.subject){
+    row+='<div class="defer-row"><span class="tag-defer">可延後</span>'+
+      '<span class="defer-tip">忙碌日：時間不夠時，這項新進度可先跳過</span>'+
+      '<button class="defer" data-deferent="'+day+'" data-id="'+e.id+'" title="把這項新進度移到隔天">延到明天 →</button></div>';
+  }
+  return row;
 }
 
 /* ===== day cards ===== */
@@ -711,10 +783,10 @@ function renderDays(){
   for(var day=1;day<=N;day++){
     var d=dateOf(day), wd=d.getDay();
     var mdd=(d.getMonth()+1)+"/"+d.getDate(), wkl="週"+WK[wd];
-    var avail=availMin(wd), rest=!S.time[wd].on, isToday=(day===TODAY);
+    var avail=availMin(wd), rest=!S.time[wd].on, isToday=(day===TODAY), busy=dayIsBusy(day);
 
     var ents=S.entries[day]||[];
-    var entHtml=ents.map(function(e){return entryRow(day,e);}).join("");
+    var entHtml=ents.map(function(e){return entryRow(day,e,busy);}).join("");
 
     /* reviews due today */
     var revs=[];
@@ -728,15 +800,17 @@ function renderDays(){
     });
     var revHtml=revs.length?revs.map(function(r){
       var lbl=(r.e.subject||"")+(r.e.grade?("·"+r.e.grade):"")+(r.e.version?("·"+r.e.version):"");
+      var qbadge=busy?'<span class="qbadge">快速回想 '+stMin(r.st,day)+'分</span>':'';
+      var hint=busy?'快速回想版：闔上書先回想，卡住才翻書；'+esc(r.st.pen):esc(r.st.pen)+' — '+esc(r.st.hint);
       return '<label class="rev'+(r.done?' done':'')+'"><input type="checkbox" data-dkey="'+r.dkey+'"'+(r.done?' checked':'')+'>'+
         '<span class="badge '+r.st.cls+'">第'+r.st.n+'次</span>'+
-        '<span class="rtext"><span class="what">複習 <b>第'+r.src+'天</b> · <span class="sjname">'+esc(lbl)+'</span>：'+esc(r.e.scope)+'</span>'+
-        '<span class="hint">'+esc(r.st.pen)+' — '+esc(r.st.hint)+'</span></span></label>';
+        '<span class="rtext"><span class="what">複習 <b>第'+r.src+'天</b> · <span class="sjname">'+esc(lbl)+'</span>：'+esc(r.e.scope)+qbadge+'</span>'+
+        '<span class="hint">'+hint+'</span></span></label>';
     }).join(""):'<div class="rev-empty">今天沒有到期的複習，專心把新進度讀好即可。</div>';
 
     /* capacity */
     var usedNew=ents.reduce(function(s,e){return s+((e.subject)?(+e.min||S.estNew):0);},0);
-    var usedRev=revs.reduce(function(s,r){return s+r.st.min;},0);
+    var usedRev=revs.reduce(function(s,r){return s+stMin(r.st,day);},0);
     var used=usedNew+usedRev;
     var pct=avail>0?Math.min(100,Math.round(used/avail*100)):(used>0?100:0);
     var over=avail>0&&used>avail;
@@ -748,12 +822,20 @@ function renderDays(){
 
     var total=revs.length, done=revs.filter(function(r){return r.done;}).length, allDone=total>0&&done===total;
 
-    html+='<article class="daycard'+(allDone?' alldone':'')+(rest?' rest':'')+(isToday?' today':'')+'" '+(isToday?'id="todaycard"':'')+'>'+
-      '<div class="rail">'+(isToday?'<span class="todaybadge">今天</span>':'')+'<span class="dn-label">Day</span><span class="dn">'+day+'</span>'+
+    var wkFixed=(S.busyWeekdays||[]).indexOf(wd)>=0&&!(S.dayMode&&S.dayMode[day]);
+    var dayTop='<div class="day-top">'+
+      '<button class="modetog'+(busy?' on':'')+'" data-modetog="'+day+'" title="切換這一天的正常／忙碌模式">'+
+        (busy?'🌙 忙碌日':'☀ 正常日')+'<span class="tog-sub">'+(busy?'改回正常':'設為忙碌')+'</span></button>'+
+      (busy?'<span class="busy-note">複習改「快速回想」、新進度可延後——先顧睡眠，別硬撐'+(wkFixed?'（每週固定）':'')+'</span>':'')+
+      '</div>';
+
+    html+='<article class="daycard'+(allDone?' alldone':'')+(rest?' rest':'')+(isToday?' today':'')+(busy?' busy':'')+'" '+(isToday?'id="todaycard"':'')+'>'+
+      '<div class="rail">'+(isToday?'<span class="todaybadge">今天</span>':'')+(busy?'<span class="busybadge">忙</span>':'')+'<span class="dn-label">Day</span><span class="dn">'+day+'</span>'+
         '<span class="dt">'+mdd+'</span><span class="wk">'+wkl+'</span>'+
         '<span class="avail">'+(rest?'休息':(avail>0?('可用 '+minToHM(avail)):'未設時段'))+'</span>'+
         '<span class="tick">'+(allDone?'✓':'')+'</span></div>'+
       '<div class="body">'+
+        dayTop+
         '<p class="sec-h">新進度 <span class="pen">原子筆畫線標記</span></p>'+
         '<div class="entries">'+(entHtml||'<div class="rev-empty">還沒排進度。按下方按鈕新增當天要讀的單元。</div>')+'</div>'+
         '<div class="add-entry"><button class="btn ghost mini" data-addent="'+day+'">＋ 新增進度</button></div>'+
@@ -777,10 +859,10 @@ function dayLoad(day){
   var revMin=0;
   STAGES.forEach(function(st){
     var src=day-st.off; if(src<1)return;
-    (S.entries[src]||[]).forEach(function(e){if(e.scope&&e.subject)revMin+=st.min;});
+    (S.entries[src]||[]).forEach(function(e){if(e.scope&&e.subject)revMin+=stMin(st,day);});
   });
   var used=usedNew+revMin;
-  return {wd:wd,avail:avail,rest:rest,used:used,over:(avail>0&&used>avail),
+  return {wd:wd,avail:avail,rest:rest,used:used,busy:dayIsBusy(day),over:(avail>0&&used>avail),
           pct:avail>0?Math.round(used/avail*100):(used>0?100:0)};
 }
 function suggestLighterDay(day){
@@ -806,8 +888,9 @@ function renderOverview(){
     else if(L.used>0)cls="ok";
     else cls="empty";
     if(d===TODAY)cls+=" now";
+    if(L.busy)cls+=" busy";
     var dd=dateOf(d);
-    var tip="Day "+d+"　"+(dd.getMonth()+1)+"/"+dd.getDate()+(d===TODAY?"（今天）":"")+"　"+(L.rest?"休息日":("預估 "+minToHM(L.used)+(L.avail>0?" / 可用 "+minToHM(L.avail):" / 未設時段")));
+    var tip="Day "+d+"　"+(dd.getMonth()+1)+"/"+dd.getDate()+(d===TODAY?"（今天）":"")+(L.busy?"（忙碌日）":"")+"　"+(L.rest?"休息日":("預估 "+minToHM(L.used)+(L.avail>0?" / 可用 "+minToHM(L.avail):" / 未設時段")));
     cells+='<button class="hm '+cls+'" data-goday="'+d+'" title="'+esc(tip)+'">'+d+'</button>';
   }
   var head, alertCls="";
@@ -836,6 +919,21 @@ function wireDays(){
   });});
   box.querySelectorAll("[data-rment]").forEach(function(b){b.addEventListener("click",function(){
     var day=+b.dataset.rment;S.entries[day]=entriesOf(day).filter(function(e){return e.id!==b.dataset.id;});save();renderDays();
+  });});
+  // 逐日切換 正常／忙碌
+  box.querySelectorAll("[data-modetog]").forEach(function(b){b.addEventListener("click",function(){
+    var day=+b.dataset.modetog;toggleDayMode(day);save();renderDays();
+    toast(dayIsBusy(day)?("Day "+day+" 已設為忙碌日：複習改快速回想、新進度可延後"):("Day "+day+" 已改回正常"));
+  });});
+  // 忙碌日：把一項新進度延到隔天
+  box.querySelectorAll("[data-deferent]").forEach(function(b){b.addEventListener("click",function(){
+    var day=+b.dataset.deferent,id=b.dataset.id,N=numDays();
+    if(day>=N){toast("已是最後一天，沒有隔天可移");return;}
+    var e=findEntry(day,id);if(!e)return;
+    S.entries[day]=entriesOf(day).filter(function(x){return x.id!==id;});
+    entriesOf(day+1).push(e);
+    delete S.done["n_"+day+"_"+id]; // 延後視為尚未完成
+    save();renderDays();toast("已延到 Day "+(day+1)+"（複習時程會一起順延）");
   });});
   // selects & scope-select & min → re-render (dependencies change)
   box.querySelectorAll('select[data-f], input[data-f="min"]').forEach(function(ctrl){
@@ -906,16 +1004,17 @@ function planRows(){
       var mn=(+e.min||S.estNew); total+=(e.subject?mn:0);
       return {txt:(lbl?lbl+"　":"")+(e.scope||""), min:mn};
     });
+    var busy=dayIsBusy(day);
     var revs=[];
     STAGES.forEach(function(st){
       var src=day-st.off; if(src<1)return;
       (S.entries[src]||[]).forEach(function(e){
         if(!e.scope||!e.subject)return;
-        total+=st.min;
-        revs.push({txt:"第"+src+"天·"+e.subject+"　"+e.scope+"（第"+st.n+"次·"+st.pen+"）", min:st.min});
+        var qm=stMin(st,day); total+=qm;
+        revs.push({txt:"第"+src+"天·"+e.subject+"　"+e.scope+"（第"+st.n+"次·"+(busy?"快速回想":st.pen)+"）", min:qm});
       });
     });
-    out.push({day:day,dt:dt,wk:wk,news:news,revs:revs,total:total});
+    out.push({day:day,dt:dt,wk:wk,news:news,revs:revs,total:total,busy:busy});
   }
   return out;
 }
@@ -928,7 +1027,7 @@ function printPlan(){
   var body=rows.map(function(r){
     var news=r.news.length?r.news.map(item).join("<br>"):"—";
     var revs=r.revs.length?r.revs.map(item).join("<br>"):"—";
-    return '<tr><td class="c">Day '+r.day+'</td><td class="c">'+r.dt+'<br><span class="wk">'+r.wk+'</span></td><td>'+news+'</td><td>'+revs+'</td><td class="c est">'+(r.total?minToHM(r.total):"—")+'</td></tr>';
+    return '<tr><td class="c">Day '+r.day+(r.busy?'<br><span class="bz">忙碌</span>':'')+'</td><td class="c">'+r.dt+'<br><span class="wk">'+r.wk+'</span></td><td>'+news+'</td><td>'+revs+'</td><td class="c est">'+(r.total?minToHM(r.total):"—")+'</td></tr>';
   }).join("");
   var doc='<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><title>'+esc(title)+'</title>'+
     '<style>'+
@@ -937,7 +1036,7 @@ function printPlan(){
     'table{width:100%;border-collapse:collapse;font-size:12.5px;}'+
     'th,td{border:1px solid #b9c0cf;padding:6px 9px;vertical-align:top;text-align:left;}'+
     'th{background:#2f52d9;color:#fff;font-size:12px;}'+
-    'td.c{white-space:nowrap;text-align:center;font-weight:700;}.wk{color:#8a93a6;font-weight:400;font-size:11px;}'+
+    'td.c{white-space:nowrap;text-align:center;font-weight:700;}.wk{color:#8a93a6;font-weight:400;font-size:11px;}.bz{color:#a6791f;font-weight:700;font-size:10px;}'+
     'td.est{font-variant-numeric:tabular-nums;color:#2f52d9;}'+
     '.ck{font-size:14px;color:#2f52d9;}.mn{color:#8a93a6;font-size:11px;}'+
     'tbody tr:nth-child(even){background:#f4f6fa;}tr{break-inside:avoid;}'+
@@ -947,7 +1046,7 @@ function printPlan(){
     '<h1>'+esc(title)+'</h1>'+
     '<div class="meta">依 1／4／7／14 間隔複習法　·　期間 '+period+'　·　共 '+rows.length+' 天　·　完成後可在 ☐ 打勾</div>'+
     '<table><thead><tr><th style="width:56px">天數</th><th style="width:70px">日期</th><th>新進度</th><th>今日複習</th><th style="width:60px">預估</th></tr></thead><tbody>'+body+'</tbody></table>'+
-    '<div class="legend">複習階段：第1次（黃色螢光筆）→ 第2次（粉紅色螢光筆）→ 第3次（螢光筆重點＋開始解題）→ 第4次（深色螢光筆快速掃）。<br>每項前的 ☐ 可於紙本手動打勾；「預估」為當天新進度＋複習的預估總時間。列印視窗開啟後，在「目的地／印表機」選擇「另存為 PDF」即可存成 PDF 檔。</div>'+
+    '<div class="legend">複習階段：第1次（黃色螢光筆）→ 第2次（粉紅色螢光筆）→ 第3次（螢光筆重點＋開始解題）→ 第4次（深色螢光筆快速掃）。<br>每項前的 ☐ 可於紙本手動打勾；「預估」為當天新進度＋複習的預估總時間。標「忙碌」的日子，複習改以「快速回想」估算（時間對半），新進度可視情況延後。列印視窗開啟後，在「目的地／印表機」選擇「另存為 PDF」即可存成 PDF 檔。</div>'+
     '<scr'+'ipt>window.onload=function(){setTimeout(function(){window.focus();window.print();},350);};window.onafterprint=function(){setTimeout(function(){window.close();},200);};</scr'+'ipt>'+
     '</body></html>';
   var w=window.open("","_blank");
@@ -1012,6 +1111,7 @@ function toast(m){toastEl.textContent=m;toastEl.classList.add("show");clearTimeo
 /* ===== init ===== */
 renderChips();
 renderTT();
+renderBusyWk();
 renderDays();
 </script>
 
