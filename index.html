@@ -295,6 +295,12 @@
   /* 熱區圖：忙碌日底線標記 */
   .hm.busy{box-shadow:inset 0 -3px 0 var(--gold-bright)}
 
+  /* ===== 計畫設定標題列＋清除設定鈕 ===== */
+  .h2row{display:flex;align-items:center;gap:10px}
+  .h2row .reset-cfg{margin-left:auto;font-weight:700;color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,var(--line));background:var(--card)}
+  .h2row .reset-cfg:hover{background:var(--warn-soft)}
+  @media(max-width:520px){.h2row .reset-cfg{padding:5px 9px;font-size:12px}}
+
   /* ===== 自製確認對話框（取代被 sandbox 擋掉的 confirm） ===== */
   .cfm-ov{position:fixed;inset:0;background:rgba(10,16,32,.5);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px}
   .cfm-box{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 16px 46px rgba(0,0,0,.32);max-width:400px;width:100%;padding:22px}
@@ -349,7 +355,7 @@
   </header>
 
   <section class="panel">
-    <h2><span class="dot"></span>計畫設定</h2>
+    <h2 class="h2row"><span class="dot"></span><span>計畫設定</span><button class="btn mini reset-cfg" id="resetcfg" title="把計畫設定重設為預設（保留已排進度）">清除設定</button></h2>
     <div class="grid-set">
       <label class="fld">目標類型
         <select id="goaltype">
@@ -1060,11 +1066,12 @@ function printPlan(){
 document.getElementById("print").addEventListener("click",printPlan);
 /* 自製確認對話框：Google Sites 內嵌 iframe 的 sandbox 缺 allow-modals，
    會擋掉瀏覽器原生 confirm()，故改用頁面內的覆蓋層。 */
-function uiConfirm(msg, onYes){
+function uiConfirm(msg, onYes, okLabel){
   var ov=document.createElement("div");
   ov.className="cfm-ov";
-  ov.innerHTML='<div class="cfm-box" role="dialog" aria-modal="true"><p class="cfm-msg"></p><div class="cfm-btns"><button class="btn mini cfm-cancel">取消</button><button class="btn mini solid cfm-ok">確定清空</button></div></div>';
+  ov.innerHTML='<div class="cfm-box" role="dialog" aria-modal="true"><p class="cfm-msg"></p><div class="cfm-btns"><button class="btn mini cfm-cancel">取消</button><button class="btn mini solid cfm-ok"></button></div></div>';
   ov.querySelector(".cfm-msg").textContent=msg;
+  ov.querySelector(".cfm-ok").textContent=okLabel||"確定";
   function close(){if(ov.parentNode)ov.parentNode.removeChild(ov);document.removeEventListener("keydown",onKey);}
   function onKey(e){if(e.key==="Escape")close();}
   ov.addEventListener("click",function(e){if(e.target===ov)close();});
@@ -1077,7 +1084,19 @@ function uiConfirm(msg, onYes){
 document.getElementById("clear").addEventListener("click",function(){
   uiConfirm("確定要清空所有新進度與複習勾選嗎？（科目、版本、時段與各項設定都會保留）", function(){
     S.entries={};S.done={};save();renderDays();toast("已清空進度");
-  });
+  }, "確定清空");
+});
+/* 清除設定：把「計畫設定」欄位（目標類型／日期／預估分鐘／科目／時段／固定忙碌日）重設回預設，保留已排進度與勾選 */
+document.getElementById("resetcfg").addEventListener("click",function(){
+  uiConfirm("確定要清除「計畫設定」並重設為預設嗎？目標類型、起訖日期、每單元預估分鐘、科目清單、每週時段與固定忙碌日都會回到初始值；你已排的新進度與複習勾選會保留。", function(){
+    var d=defaultState();
+    S.goalType=d.goalType; S.start=d.start; S.end=d.end; S.estNew=d.estNew;
+    S.subjects=d.subjects; S.time=d.time; S.busyWeekdays=d.busyWeekdays; S.dayMode=d.dayMode;
+    goalEl.value=S.goalType; startEl.value=S.start; endEl.value=S.end; estEl.value=S.estNew;
+    save();
+    renderChips(); renderTT(); renderBusyWk(); renderDays();
+    toast("已清除設定，計畫設定已重設為預設");
+  }, "確定清除");
 });
 
 var toastEl=document.getElementById("toast"),toastT;
