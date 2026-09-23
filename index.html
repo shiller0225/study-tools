@@ -355,7 +355,7 @@
   </header>
 
   <section class="panel">
-    <h2 class="h2row"><span class="dot"></span><span>計畫設定</span><button class="btn mini reset-cfg" id="resetcfg" title="把計畫設定重設為預設（保留已排進度）">清除設定</button></h2>
+    <h2 class="h2row"><span class="dot"></span><span>計畫設定</span><button class="btn mini reset-cfg" id="resetcfg" title="清空所有科目並取消所有每週時段勾選（其他設定與已排進度保留）">清除設定</button></h2>
     <div class="grid-set">
       <label class="fld">目標類型
         <select id="goaltype">
@@ -1086,16 +1086,15 @@ document.getElementById("clear").addEventListener("click",function(){
     S.entries={};S.done={};save();renderDays();toast("已清空進度");
   }, "確定清空");
 });
-/* 清除設定：把「計畫設定」欄位（目標類型／日期／預估分鐘／科目／時段／固定忙碌日）重設回預設，保留已排進度與勾選 */
+/* 清除設定：清空全部科目、並取消所有「每週可利用的複習時段」的勾選，讓使用者重新加入與勾選。
+   其他設定（目標類型／日期／預估分鐘／固定忙碌日）與已排進度、複習勾選都保留。 */
 document.getElementById("resetcfg").addEventListener("click",function(){
-  uiConfirm("確定要清除「計畫設定」並重設為預設嗎？目標類型、起訖日期、每單元預估分鐘、科目清單、每週時段與固定忙碌日都會回到初始值；你已排的新進度與複習勾選會保留。", function(){
-    var d=defaultState();
-    S.goalType=d.goalType; S.start=d.start; S.end=d.end; S.estNew=d.estNew;
-    S.subjects=d.subjects; S.time=d.time; S.busyWeekdays=d.busyWeekdays; S.dayMode=d.dayMode;
-    goalEl.value=S.goalType; startEl.value=S.start; endEl.value=S.end; estEl.value=S.estNew;
+  uiConfirm("確定要清除設定嗎？將「清空所有科目」並「取消所有每週複習時段的勾選」，讓你重新加入科目、自行勾選時段；其他設定與你已排的進度、複習勾選都會保留。", function(){
+    S.subjects=[];
+    for(var i=0;i<7;i++){ if(S.time[i]) S.time[i].on=false; }
     save();
-    renderChips(); renderTT(); renderBusyWk(); renderDays();
-    toast("已清除設定，計畫設定已重設為預設");
+    renderChips(); renderTT(); renderDays();
+    toast("已清除科目與每週時段，請重新加入科目並勾選時段");
   }, "確定清除");
 });
 
