@@ -294,6 +294,13 @@
 
   /* 熱區圖：忙碌日底線標記 */
   .hm.busy{box-shadow:inset 0 -3px 0 var(--gold-bright)}
+
+  /* ===== 自製確認對話框（取代被 sandbox 擋掉的 confirm） ===== */
+  .cfm-ov{position:fixed;inset:0;background:rgba(10,16,32,.5);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px}
+  .cfm-box{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 16px 46px rgba(0,0,0,.32);max-width:400px;width:100%;padding:22px}
+  .cfm-msg{margin:0 0 18px;font-size:15px;line-height:1.65;color:var(--ink);font-weight:600}
+  .cfm-btns{display:flex;gap:10px;justify-content:flex-end}
+
   @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
 
@@ -384,10 +391,7 @@
       <div class="p-txt">整體完成度<br><b id="ptxt">0 / 0</b> 個項目（新進度＋複習）</div>
     </div>
     <div class="tools">
-      <button class="btn mini" id="gotoday">回到今天</button>
-      <button class="btn mini" id="sample">載入範例</button>
       <button class="btn mini" id="clear">清空進度</button>
-      <button class="btn mini" id="copy">複製成表格</button>
       <button class="btn mini solid" id="print">列印 / 存 PDF</button>
     </div>
   </div>
@@ -1054,54 +1058,25 @@ function printPlan(){
   w.document.open();w.document.write(doc);w.document.close();
 }
 document.getElementById("print").addEventListener("click",printPlan);
-document.getElementById("gotoday").addEventListener("click",function(){
-  var ti=todayIdx();
-  if(!ti){toast("今天不在計畫的起訖範圍內");return;}
-  var c=document.querySelectorAll("#days .daycard")[ti-1];
-  if(c){c.scrollIntoView({behavior:"smooth",block:"center"});}
-});
+/* 自製確認對話框：Google Sites 內嵌 iframe 的 sandbox 缺 allow-modals，
+   會擋掉瀏覽器原生 confirm()，故改用頁面內的覆蓋層。 */
+function uiConfirm(msg, onYes){
+  var ov=document.createElement("div");
+  ov.className="cfm-ov";
+  ov.innerHTML='<div class="cfm-box" role="dialog" aria-modal="true"><p class="cfm-msg"></p><div class="cfm-btns"><button class="btn mini cfm-cancel">取消</button><button class="btn mini solid cfm-ok">確定清空</button></div></div>';
+  ov.querySelector(".cfm-msg").textContent=msg;
+  function close(){if(ov.parentNode)ov.parentNode.removeChild(ov);document.removeEventListener("keydown",onKey);}
+  function onKey(e){if(e.key==="Escape")close();}
+  ov.addEventListener("click",function(e){if(e.target===ov)close();});
+  ov.querySelector(".cfm-cancel").addEventListener("click",close);
+  ov.querySelector(".cfm-ok").addEventListener("click",function(){close();onYes();});
+  document.addEventListener("keydown",onKey);
+  document.body.appendChild(ov);
+  var ok=ov.querySelector(".cfm-ok");if(ok)ok.focus();
+}
 document.getElementById("clear").addEventListener("click",function(){
-  if(!confirm("確定要清空所有新進度與複習勾選嗎？（科目、時段與設定會保留）"))return;
-  S.entries={};S.done={};save();renderDays();toast("已清空進度");
-});
-document.getElementById("sample").addEventListener("click",function(){
-  var subs=S.subjects.map(function(s){return s.name;});
-  var s0=subs[0]||"自然", s1=subs[1]||"地理", s2=subs[2]||"歷史";
-  var seed={
-    1:[{grade:"二上",subject:s0,version:"康軒",scope:"1-1 長度與體積的測量",min:40},{grade:"二上",subject:s1,version:"康軒",scope:"第1課 中國的自然環境",min:35}],
-    2:[{grade:"二上",subject:s0,version:"康軒",scope:"1-2 質量與密度的測量",min:40},{grade:"二上",subject:s2,version:"康軒",scope:"第1課 商周至隋唐的國家與社會",min:30}],
-    3:[{grade:"二上",subject:s0,version:"康軒",scope:"2-1 認識物質",min:45}],
-    4:[{grade:"二上",subject:s1,version:"康軒",scope:"第2課 中國的人口成長與文化遷移",min:35}],
-    5:[{grade:"二上",subject:s0,version:"康軒",scope:"2-2 水溶液",min:45},{grade:"二上",subject:s2,version:"康軒",scope:"第2課 商周至隋唐的民族與文化",min:30}]
-  };
-  S.goalType="段考複習"; var gt=document.getElementById("goaltype"); if(gt)gt.value=S.goalType; // 範例為節層級，配合段考小範圍
-  Object.keys(seed).forEach(function(day){
-    S.entries[day]=seed[day].map(function(o){return {id:uid(),grade:o.grade,subject:o.subject,version:o.version,scope:o.scope,min:o.min};});
-  });
-  save();renderDays();toast("已載入範例，往下捲看看複習與容量怎麼自動算");
-});
-document.getElementById("copy").addEventListener("click",function(){
-  var lines=[["天數","日期","週","類型","年級","科目","版本","範圍/章節","階段/預估"].join("\t")];
-  var N=numDays();
-  for(var day=1;day<=N;day++){
-    var d=dateOf(day),dt=(d.getMonth()+1)+"/"+d.getDate(),wk="週"+WK[d.getDay()];
-    (S.entries[day]||[]).forEach(function(e){
-      if(!e.subject&&!e.scope)return;
-      lines.push([("D"+day),dt,wk,"新進度",e.grade||"",e.subject||"",e.version||"",e.scope||"",((e.min||S.estNew)+"分")].join("\t"));
-    });
-    STAGES.forEach(function(st){
-      var src=day-st.off;if(src<1)return;
-      (S.entries[src]||[]).forEach(function(e){
-        if(!e.scope||!e.subject)return;
-        lines.push([("D"+day),dt,wk,"複習",e.grade||"",e.subject||"",e.version||"",("(第"+src+"天) "+e.scope),("第"+st.n+"次·"+st.pen)].join("\t"));
-      });
-    });
-  }
-  var txt=lines.join("\n");
-  navigator.clipboard.writeText(txt).then(function(){toast("已複製為表格，貼到 Excel／Google 試算表即可");},function(){
-    var ta=document.createElement("textarea");ta.value=txt;document.body.appendChild(ta);ta.select();
-    try{document.execCommand("copy");toast("已複製為表格");}catch(e){toast("複製失敗，請手動選取");}
-    document.body.removeChild(ta);
+  uiConfirm("確定要清空所有新進度與複習勾選嗎？（科目、版本、時段與各項設定都會保留）", function(){
+    S.entries={};S.done={};save();renderDays();toast("已清空進度");
   });
 });
 
