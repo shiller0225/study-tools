@@ -481,7 +481,7 @@ var STAGES=[
 ];
 var WK=["日","一","二","三","四","五","六"];
 var GRADES=["一上","一下","二上","二下","三上","三下"];
-var VERSIONS=["翰林","康軒","南一","自訂"];
+var VERSIONS=["翰林","康軒","自訂"];
 var KEY="study-rhythm-v3";
 
 /* ===== 章節目錄（自然科，依 114/115 翰林・康軒目錄整理；主題→節） ===== */
@@ -670,7 +670,7 @@ function defaultState(){
   return {
     goalType:"段考複習", start:t, end:addDaysISO(t,13),
     estNew:40,
-    subjects:[{id:uid(),name:"國文"},{id:uid(),name:"自然"},{id:uid(),name:"地理"},{id:uid(),name:"歷史"},{id:uid(),name:"公民"},{id:uid(),name:"數學"},{id:uid(),name:"英文"}],
+    subjects:[{id:uid(),name:"國文"},{id:uid(),name:"自然"},{id:uid(),name:"地理"},{id:uid(),name:"歷史"},{id:uid(),name:"公民"}],
     time:defaultTime(),
     busyWeekdays:[], dayMode:{},
     queue:[], entries:{}, done:{}
